@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { signIn, type AuthFormState } from "@/app/auth-actions";
+import { FormToast } from "@/app/ui/form-toast";
 
 const initialState: AuthFormState = { message: "" };
 
@@ -43,11 +44,7 @@ export function LoginForm() {
         />
       </div>
 
-      {state.message ? (
-        <p aria-live="polite" className="text-center text-sm text-red-600">
-          {state.message}
-        </p>
-      ) : null}
+      <FormToast message={state.message} />
 
       <button
         type="submit"

@@ -1,6 +1,8 @@
 import {
   boolean,
   index,
+  integer,
+  numeric,
   pgEnum,
   pgTable,
   text,
@@ -100,6 +102,72 @@ export const exercises = pgTable(
   },
   (table) => [index("exercises_name_idx").on(table.name)],
 );
+
+export const workoutGroupType = pgEnum("workout_group_type", [
+  "single",
+  "bi_set",
+  "tri_set",
+]);
+
+export const workouts = pgTable(
+  "workouts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 120 }).notNull(),
+    description: text("description"),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [index("workouts_created_by_idx").on(table.createdBy)],
+);
+
+export const workoutGroups = pgTable(
+  "workout_groups",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workoutId: uuid("workout_id")
+      .notNull()
+      .references(() => workouts.id, { onDelete: "cascade" }),
+    type: workoutGroupType("type").default("single").notNull(),
+    orderIndex: integer("order_index").notNull(),
+  },
+  (table) => [index("workout_groups_workout_id_idx").on(table.workoutId)],
+);
+
+export const workoutExercises = pgTable(
+  "workout_exercises",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => workoutGroups.id, { onDelete: "cascade" }),
+    exerciseId: uuid("exercise_id")
+      .notNull()
+      .references(() => exercises.id, { onDelete: "restrict" }),
+    orderIndex: integer("order_index").notNull(),
+    sets: integer("sets").notNull(),
+    repetitions: integer("repetitions").notNull(),
+    load: numeric("load", { precision: 8, scale: 2 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("workout_exercises_group_id_idx").on(table.groupId),
+    index("workout_exercises_exercise_id_idx").on(table.exerciseId),
+  ],
+);
+
+export type Workout = typeof workouts.$inferSelect;
+export type WorkoutGroup = typeof workoutGroups.$inferSelect;
+export type WorkoutExercise = typeof workoutExercises.$inferSelect;
 
 export type Exercise = typeof exercises.$inferSelect;
 export type NewExercise = typeof exercises.$inferInsert;

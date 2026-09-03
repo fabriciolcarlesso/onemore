@@ -1,15 +1,24 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createExercise, type ExerciseFormState } from "@/app/exercises-actions";
 import { FormToast } from "@/app/ui/form-toast";
 
 const initialState: ExerciseFormState = { message: "" };
 const inputClassName = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base outline-none transition focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10";
 
-export function ExerciseForm() {
+export function ExerciseForm({ onSuccess }: { onSuccess?: () => void }) {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(createExercise, initialState);
   const [fields, setFields] = useState({ name: "", description: "" });
+
+  useEffect(() => {
+    if (!state.message.includes("sucesso")) return;
+    onSuccess?.();
+    const refreshTimer = window.setTimeout(() => router.refresh(), 0);
+    return () => window.clearTimeout(refreshTimer);
+  }, [onSuccess, router, state.message]);
 
   return (
     <form action={formAction} className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8" autoComplete="off" noValidate>

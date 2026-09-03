@@ -27,7 +27,7 @@ export function ExerciseModal() {
             <button type="button" aria-label="Fechar modal" onClick={() => setOpen(false)} className="absolute right-4 top-4 z-10 flex size-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-950">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-5"><path strokeLinecap="round" d="m6 6 12 12M18 6 6 18" /></svg>
             </button>
-            <div id="new-exercise-title"><ExerciseForm /></div>
+            <div id="new-exercise-title"><ExerciseForm onSuccess={() => setOpen(false)} /></div>
           </div>
         </div>
       </div> : null}

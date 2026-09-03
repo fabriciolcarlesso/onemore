@@ -10,9 +10,10 @@ type DashboardUser = {
 };
 
 type IconName = "grid" | "dumbbell" | "users" | "chart" | "settings";
-type DashboardPage = "overview" | "exercises";
+type DashboardPage = "overview" | "exercises" | "workouts";
 
 const navigation: { label: string; icon: IconName; page: DashboardPage | null; href: string }[] = [
+  { label: "Treinos", icon: "grid", page: "workouts", href: "/treinos" },
   { label: "Exercícios", icon: "dumbbell", page: "exercises", href: "/exercicios" },
 ];
 
@@ -75,13 +76,13 @@ export function DashboardShell({
           {navigation.map((item) => <Link href={item.href} key={item.label} title={!sidebarExpanded ? item.label : undefined} onClick={() => setMobileOpen(false)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition-colors ${item.page === activePage ? "bg-slate-100 text-slate-950" : "text-slate-500 hover:bg-slate-50 hover:text-slate-950"} ${!sidebarExpanded ? "lg:justify-center lg:px-0" : ""}`}><Icon name={item.icon} /><span className={!sidebarExpanded ? "lg:hidden" : ""}>{item.label}</span></Link>)}
         </nav>
 
-        <div className={`border-t border-slate-100 p-3 ${!sidebarExpanded ? "lg:flex lg:justify-center" : ""}`}><Link href="/perfil" className={`flex items-center gap-3 rounded-xl bg-slate-50 p-3 transition hover:bg-slate-100 ${!sidebarExpanded ? "lg:p-2" : ""}`}><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">{initials(user.name)}</span><span className={!sidebarExpanded ? "lg:hidden" : ""}><strong className="block truncate text-sm font-semibold">{user.name}</strong><span className="block text-xs capitalize text-slate-400">{user.role}</span></span></Link></div>
+        <div className={`border-t border-slate-100 p-3 ${!sidebarExpanded ? "lg:flex lg:justify-center" : ""}`}><Link href="/perfil" className={`flex cursor-pointer items-center gap-3 rounded-xl bg-slate-50 p-3 ${!sidebarExpanded ? "lg:p-2" : ""}`}><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">{initials(user.name)}</span><span className={!sidebarExpanded ? "lg:hidden" : ""}><strong className="block truncate text-sm font-semibold">{user.name}</strong><span className="block text-xs capitalize text-slate-400">{user.role}</span></span></Link></div>
       </aside>
 
       <div className={`min-h-dvh transition-[padding] duration-200 ${sidebarExpanded ? "lg:pl-64" : "lg:pl-[76px]"}`}>
         <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-100 bg-white/90 px-8 backdrop-blur sm:px-10 xl:px-12">
           <button type="button" aria-label="Abrir menu" onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-6"><path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg></button>
-          <div className="hidden lg:block"><p className="text-sm font-medium text-slate-400">Área de trabalho</p><p className="text-base font-semibold">{activePage === "exercises" ? "Exercícios" : "Visão geral"}</p></div>
+          <div className="hidden lg:block"><p className="text-sm font-medium text-slate-400">Área de trabalho</p><p className="text-base font-semibold">{activePage === "exercises" ? "Exercícios" : activePage === "workouts" ? "Treinos" : "Visão geral"}</p></div>
           <div className="ml-auto flex items-center gap-3"><span className="hidden text-right sm:block"><strong className="block text-sm font-semibold">{user.name}</strong><span className="text-xs text-slate-400">Conta ativa</span></span><span className="flex size-10 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">{initials(user.name)}</span><form action={signOut}><button type="submit" aria-label="Sair" title="Sair" className="flex size-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-950"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M18 9l3 3m0 0-3 3m3-3H9" /></svg></button></form></div>
         </header>
 

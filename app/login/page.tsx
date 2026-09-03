@@ -8,7 +8,7 @@ export default function LoginPage() {
       <section className="w-full max-w-sm px-1 py-6 sm:px-4 sm:py-8">
         <header className="mb-8 text-center">
           <p className="text-4xl font-normal leading-none tracking-tight">
-            One<strong className="font-bold">More</strong>
+            just<strong className="font-bold">OneMore</strong>
           </p>
           <div
             aria-hidden="true"

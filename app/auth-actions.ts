@@ -187,3 +187,23 @@ export async function updateProfile(
   revalidatePath("/exercicios");
   return { message: "Dados pessoais atualizados com sucesso." };
 }
+
+export async function updatePassword(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const user = await getCurrentUser();
+  if (!user) return { message: "Sua sessão expirou. Entre novamente." };
+
+  const currentPassword = readPassword(formData, "currentPassword");
+  const newPassword = readPassword(formData, "newPassword");
+  const confirmation = readPassword(formData, "passwordConfirmation");
+  const [record] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, user.id)).limit(1);
+
+  if (!record || !(await verifyPassword(currentPassword, record.passwordHash))) return { message: "A senha atual está incorreta." };
+  if (newPassword.length < 8 || newPassword.length > 128) return { message: "A nova senha deve ter entre 8 e 128 caracteres." };
+  if (newPassword !== confirmation) return { message: "As senhas não coincidem." };
+
+  await db.update(users).set({ passwordHash: await hashPassword(newPassword), updatedAt: new Date() }).where(eq(users.id, user.id));
+  return { message: "Senha alterada com sucesso." };
+}

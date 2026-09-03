@@ -3,9 +3,9 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-white px-6 py-10 text-slate-950 sm:px-10">
-      <section className="flex max-w-full flex-col items-center gap-5 text-center sm:grid sm:w-full sm:max-w-xl sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-0 sm:text-left">
+      <section className="mx-auto flex max-w-full flex-col items-center gap-5 text-center sm:grid sm:w-full sm:max-w-xl sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-0 sm:text-left">
         <h1 className="text-4xl font-normal leading-none tracking-tight sm:justify-self-end sm:pr-7">
-          One<strong className="font-bold">More</strong>
+          just<strong className="font-bold">OneMore</strong>
         </h1>
 
         <div

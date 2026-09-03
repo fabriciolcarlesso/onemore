@@ -5,7 +5,7 @@ export default function CadastroSucessoPage() {
     <main className="flex min-h-dvh items-center justify-center bg-white px-5 py-10 text-center text-slate-950">
       <section className="w-full max-w-sm">
         <p className="text-4xl font-normal leading-none tracking-tight">
-          One<strong className="font-bold">More</strong>
+          just<strong className="font-bold">OneMore</strong>
         </p>
         <div aria-hidden="true" className="mx-auto my-5 h-px w-12 bg-slate-300" />
         <h1 className="text-xl font-semibold">Confira seu e-mail</h1>

@@ -65,7 +65,7 @@ export function DashboardShell({
 
       <aside onMouseEnter={() => setHoverExpanded(true)} onMouseLeave={() => setHoverExpanded(false)} onTouchStart={() => setHoverExpanded(true)} className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-white transition-all duration-200 lg:translate-x-0 ${sidebarExpanded ? "lg:w-64" : "lg:w-[76px]"} ${mobileOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"}`}>
         <div className={`relative flex h-20 items-center border-b border-slate-100 px-5 ${sidebarExpanded ? "justify-between" : "lg:justify-center lg:px-0"}`}>
-          <span className="text-2xl font-normal tracking-tight"><span className={sidebarExpanded ? "" : "lg:hidden"}>One<strong className="font-bold">More</strong></span><span className={sidebarExpanded ? "lg:hidden" : ""}>ON</span></span>
+          <span className="text-2xl font-normal tracking-tight"><span className={sidebarExpanded ? "" : "lg:hidden"}>just<strong className="font-bold">OneMore</strong></span><span className={sidebarExpanded ? "lg:hidden" : ""}>jOM</span></span>
           {sidebarExpanded ? <button type="button" aria-label={locked ? "Desbloquear e recolher menu" : "Fixar menu expandido"} onClick={toggleSidebarLock} className="hidden size-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-950 lg:flex">
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-5"><path strokeLinecap="round" strokeLinejoin="round" d={locked ? "M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6V10Z" : "M7 10V7a5 5 0 0 1 10 0M6 10h12v10H6V10Zm6 4v2"} /></svg>
           </button> : null}

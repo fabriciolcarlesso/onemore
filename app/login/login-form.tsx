@@ -13,7 +13,7 @@ export function LoginForm() {
   );
 
   return (
-    <form action={formAction} className="space-y-4" autoComplete="off">
+    <form action={formAction} className="space-y-4" autoComplete="off" noValidate>
       <div>
         <label htmlFor="email" className="sr-only">
           E-mail
@@ -23,7 +23,6 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="off"
-          required
           placeholder="E-mail"
           className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base outline-none transition focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10"
         />
@@ -38,13 +37,12 @@ export function LoginForm() {
           name="password"
           type="password"
           autoComplete="off"
-          required
           placeholder="Senha"
           className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base outline-none transition focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10"
         />
       </div>
 
-      <FormToast message={state.message} />
+      <FormToast state={state} />
 
       <button
         type="submit"

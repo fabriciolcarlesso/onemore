@@ -2,11 +2,12 @@
 
 import { and, eq, gt } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { emailVerificationTokens, users } from "@/db/schema";
 import { createToken, hashPassword, hashToken, verifyPassword } from "@/lib/auth/crypto";
 import { sendVerificationEmail } from "@/lib/auth/email";
-import { createSession, deleteCurrentSession } from "@/lib/auth/session";
+import { createSession, deleteCurrentSession, getCurrentUser } from "@/lib/auth/session";
 
 export type AuthFormState = {
   message: string;
@@ -168,4 +169,21 @@ export async function verifyEmailToken(token: string) {
 export async function signOut() {
   await deleteCurrentSession();
   redirect("/login");
+}
+
+export async function updateProfile(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const user = await getCurrentUser();
+  if (!user) return { message: "Sua sessão expirou. Entre novamente." };
+
+  const name = readField(formData, "name");
+  if (name.length < 2 || name.length > 120) return { message: "Informe um nome válido." };
+
+  await db.update(users).set({ name, updatedAt: new Date() }).where(eq(users.id, user.id));
+  revalidatePath("/perfil");
+  revalidatePath("/dashboard");
+  revalidatePath("/exercicios");
+  return { message: "Dados pessoais atualizados com sucesso." };
 }

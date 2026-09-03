@@ -1,12 +1,18 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { signUp, type AuthFormState } from "@/app/auth-actions";
 import { FormToast } from "@/app/ui/form-toast";
 
 const initialState: AuthFormState = { message: "" };
 
 export function SignupForm() {
+  const [fields, setFields] = useState({
+    name: "",
+    email: "",
+    password: "",
+    passwordConfirmation: "",
+  });
   const [state, formAction, pending] = useActionState(
     signUp,
     initialState,
@@ -15,8 +21,12 @@ export function SignupForm() {
   const inputClassName =
     "h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base outline-none transition focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10";
 
+  function updateField(field: keyof typeof fields, value: string) {
+    setFields((current) => ({ ...current, [field]: value }));
+  }
+
   return (
-    <form action={formAction} className="space-y-4" autoComplete="off">
+    <form action={formAction} className="space-y-4" autoComplete="off" noValidate>
       <div>
         <label htmlFor="name" className="sr-only">
           Nome
@@ -26,10 +36,9 @@ export function SignupForm() {
           name="name"
           type="text"
           autoComplete="off"
-          required
-          minLength={2}
-          maxLength={120}
           placeholder="Nome"
+          value={fields.name}
+          onChange={(event) => updateField("name", event.target.value)}
           className={inputClassName}
         />
       </div>
@@ -43,9 +52,9 @@ export function SignupForm() {
           name="email"
           type="email"
           autoComplete="off"
-          required
-          maxLength={255}
           placeholder="E-mail"
+          value={fields.email}
+          onChange={(event) => updateField("email", event.target.value)}
           className={inputClassName}
         />
       </div>
@@ -59,10 +68,9 @@ export function SignupForm() {
           name="password"
           type="password"
           autoComplete="new-password"
-          required
-          minLength={8}
-          maxLength={128}
           placeholder="Senha"
+          value={fields.password}
+          onChange={(event) => updateField("password", event.target.value)}
           className={inputClassName}
         />
       </div>
@@ -76,15 +84,16 @@ export function SignupForm() {
           name="passwordConfirmation"
           type="password"
           autoComplete="new-password"
-          required
-          minLength={8}
-          maxLength={128}
           placeholder="Confirme sua senha"
+          value={fields.passwordConfirmation}
+          onChange={(event) =>
+            updateField("passwordConfirmation", event.target.value)
+          }
           className={inputClassName}
         />
       </div>
 
-      <FormToast message={state.message} />
+      <FormToast state={state} />
 
       <button
         type="submit"

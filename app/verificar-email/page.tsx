@@ -25,10 +25,10 @@ export default async function VerificarEmailPage({
             : "Solicite um novo link de confirmação para continuar."}
         </p>
         <Link
-          href={verified ? "/login" : "/cadastro"}
+          href={verified ? "/dashboard" : "/login"}
           className="mx-auto mt-7 block w-fit rounded text-sm font-semibold text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-950"
         >
-          {verified ? "Entrar" : "Voltar ao cadastro"}
+          {verified ? "Continuar" : "Entrar para solicitar novo link"}
         </Link>
       </section>
     </main>

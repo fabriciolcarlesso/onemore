@@ -44,8 +44,8 @@ export async function sendVerificationEmail({
       from,
       to: [email],
       subject: "Confirme seu e-mail na OneMore",
-      html: `<p>Olá, ${escapeHtml(name)}.</p><p>Confirme seu e-mail para acessar a OneMore:</p><p><a href="${verificationUrl.toString()}">Confirmar meu e-mail</a></p><p>Este link expira em 1 hora.</p>`,
-      text: `Olá, ${name}. Confirme seu e-mail para acessar a OneMore: ${verificationUrl.toString()} O link expira em 1 hora.`,
+      html: `<p>Olá, ${escapeHtml(name)}.</p><p>Confirme seu e-mail na OneMore:</p><p><a href="${verificationUrl.toString()}">Confirmar meu e-mail</a></p><p>Este link expira em 1 hora.</p>`,
+      text: `Olá, ${name}. Confirme seu e-mail na OneMore: ${verificationUrl.toString()} O link expira em 1 hora.`,
     }),
   });
 

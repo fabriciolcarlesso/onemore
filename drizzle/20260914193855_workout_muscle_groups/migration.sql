@@ -1,0 +1,1 @@
+ALTER TABLE "workout_groups" ADD COLUMN "muscle_group_id" uuid;

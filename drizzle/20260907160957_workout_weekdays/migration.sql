@@ -1,0 +1,1 @@
+ALTER TABLE "workouts" ADD COLUMN "weekdays" text[] DEFAULT '{}'::text[] NOT NULL;

@@ -4,7 +4,7 @@ import { and, eq, gt } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { emailVerificationTokens, users } from "@/db/schema";
+import { emailVerificationTokens, sessions, studentPlans, users } from "@/db/schema";
 import { createToken, hashPassword, hashToken, verifyPassword } from "@/lib/auth/crypto";
 import { sendVerificationEmail } from "@/lib/auth/email";
 import { createSession, deleteCurrentSession, getCurrentUser } from "@/lib/auth/session";
@@ -12,6 +12,35 @@ import { createSession, deleteCurrentSession, getCurrentUser } from "@/lib/auth/
 export type AuthFormState = {
   message: string;
 };
+
+export async function resendVerificationEmail() {
+  const user = await getCurrentUser();
+  if (!user) return { message: "Sua sessão expirou." };
+  if (user.emailVerifiedAt) return { message: "Seu e-mail já está confirmado." };
+  try {
+    const [recent] = await db.select({ id: emailVerificationTokens.id }).from(emailVerificationTokens).where(and(eq(emailVerificationTokens.userId, user.id), gt(emailVerificationTokens.expiresAt, new Date(Date.now() + 59 * 60000)))).limit(1);
+    if (recent) return { message: "Aguarde um minuto antes de solicitar outro link." };
+    const token = createToken();
+    const [created] = await db.insert(emailVerificationTokens).values({ userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 3600000) }).returning({ id: emailVerificationTokens.id });
+    try { await sendVerificationEmail({ name: user.name, email: user.email, token }); }
+    catch { await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.id, created.id)); throw new Error("EMAIL_DELIVERY_FAILED"); }
+    return { message: "Link de confirmação enviado. Confira sua caixa de entrada." };
+  } catch { return { message: "Não foi possível enviar o link. Tente novamente mais tarde." }; }
+}
+
+export async function updatePreferredTeacher(preferredTeacher: "romeu" | "julieta") {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "aluno") return { ok: false, message: "Entre com sua conta de aluno para escolher o assistente." };
+  if (preferredTeacher !== "romeu" && preferredTeacher !== "julieta") return { ok: false, message: "Selecione um assistente válido." };
+  try {
+    await db.update(users).set({ preferredTeacher, updatedAt: new Date() }).where(eq(users.id, user.id));
+    revalidatePath("/perfil");
+    revalidatePath("/treinos", "layout");
+    return { ok: true, message: "Assistente salvo com sucesso." };
+  } catch {
+    return { ok: false, message: "Não foi possível salvar o assistente. Tente novamente." };
+  }
+}
 
 function readField(formData: FormData, field: string) {
   return String(formData.get(field) ?? "").trim();
@@ -115,8 +144,10 @@ export async function signIn(
     .select({
       id: users.id,
       passwordHash: users.passwordHash,
+      role: users.role,
       emailVerifiedAt: users.emailVerifiedAt,
       active: users.active,
+      mustChangePassword: users.mustChangePassword,
     })
     .from(users)
     .where(eq(users.email, email))
@@ -126,12 +157,13 @@ export async function signIn(
     return { message: "E-mail ou senha inválidos." };
   }
 
-  if (!user.emailVerifiedAt) {
-    return { message: "Confirme seu e-mail antes de entrar." };
-  }
 
+  const [chosenPlan] = user.role === "aluno"
+    ? await db.select({ studentId: studentPlans.studentId }).from(studentPlans).where(eq(studentPlans.studentId, user.id)).limit(1)
+    : [];
   await createSession(user.id);
-  redirect("/dashboard");
+  if (user.mustChangePassword) redirect("/trocar-senha");
+  redirect(user.role === "aluno" && !chosenPlan ? "/planos" : "/dashboard");
 }
 
 export async function verifyEmailToken(token: string) {
@@ -179,9 +211,15 @@ export async function updateProfile(
   if (!user) return { message: "Sua sessão expirou. Entre novamente." };
 
   const name = readField(formData, "name");
+  const weightValue = readField(formData, "weight");
+  const heightValue = readField(formData, "height");
+  const weight = weightValue ? Number(weightValue.replace(",", ".")) : null;
+  const height = heightValue ? Number(heightValue) : null;
   if (name.length < 2 || name.length > 120) return { message: "Informe um nome válido." };
+  if (weight !== null && (!Number.isFinite(weight) || weight <= 0 || weight > 500)) return { message: "Informe um peso válido em kg." };
+  if (height !== null && (!Number.isInteger(height) || height <= 0 || height > 300)) return { message: "Informe uma altura válida em cm." };
 
-  await db.update(users).set({ name, updatedAt: new Date() }).where(eq(users.id, user.id));
+  await db.update(users).set({ name, weight: weight === null ? null : weight.toFixed(2), height, updatedAt: new Date() }).where(eq(users.id, user.id));
   revalidatePath("/perfil");
   revalidatePath("/dashboard");
   revalidatePath("/exercicios");
@@ -192,7 +230,7 @@ export async function updatePassword(
   _previousState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const user = await getCurrentUser();
+  const user = await getCurrentUser({ allowTemporaryPassword: true });
   if (!user) return { message: "Sua sessão expirou. Entre novamente." };
 
   const currentPassword = readPassword(formData, "currentPassword");
@@ -204,6 +242,12 @@ export async function updatePassword(
   if (newPassword.length < 8 || newPassword.length > 128) return { message: "A nova senha deve ter entre 8 e 128 caracteres." };
   if (newPassword !== confirmation) return { message: "As senhas não coincidem." };
 
-  await db.update(users).set({ passwordHash: await hashPassword(newPassword), updatedAt: new Date() }).where(eq(users.id, user.id));
+  const newHash = await hashPassword(newPassword);
+  await db.batch([
+    db.update(users).set({ passwordHash: newHash, mustChangePassword: false, updatedAt: new Date() }).where(eq(users.id, user.id)),
+    db.delete(sessions).where(eq(sessions.userId, user.id)),
+  ]);
+  await createSession(user.id);
+  if (user.mustChangePassword) redirect("/dashboard");
   return { message: "Senha alterada com sucesso." };
 }

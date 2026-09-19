@@ -29,7 +29,7 @@ export async function createSession(userId: string) {
   });
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser({ allowTemporaryPassword = false }: { allowTemporaryPassword?: boolean } = {}) {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
 
   if (!token) {
@@ -41,7 +41,12 @@ export async function getCurrentUser() {
       id: users.id,
       name: users.name,
       email: users.email,
+      emailVerifiedAt: users.emailVerifiedAt,
+      mustChangePassword: users.mustChangePassword,
       role: users.role,
+      preferredTeacher: users.preferredTeacher,
+      weight: users.weight,
+      height: users.height,
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
@@ -54,6 +59,7 @@ export async function getCurrentUser() {
     )
     .limit(1);
 
+  if (result?.mustChangePassword && !allowTemporaryPassword) redirect("/trocar-senha");
   return result ?? null;
 }
 

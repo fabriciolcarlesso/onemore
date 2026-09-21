@@ -20,5 +20,5 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
   const exerciseList = await db.select({ id: exercises.id, name: exercises.name, description: exercises.description }).from(exercises).orderBy(asc(exercises.name));
   const muscleGroupList = await db.select({ id: muscleGroups.id, name: muscleGroups.name }).from(muscleGroups).orderBy(asc(muscleGroups.name));
   const data = { ...workout, groups: groups.map((group) => ({ ...group, restSeconds: group.restSeconds === null ? "" : String(group.restSeconds), exercises: items.filter((item) => item.groupId === group.id).map((item) => ({ ...item, load: item.load ?? "" })) })) };
-  return <DashboardShell user={user} signOut={signOut} activePage="workouts"><div><Link href={`/treinos/${id}`} className="text-sm text-slate-500 hover:text-slate-950">← Voltar para o treino</Link><WorkoutBuilder exercises={exerciseList} muscleGroups={muscleGroupList} workout={data} /></div></DashboardShell>;
+  return <DashboardShell user={user} signOut={signOut} activePage="workouts" hideFooter><div><Link href={`/treinos/${id}`} className="text-sm text-slate-500 hover:text-slate-950">← Voltar para o treino</Link><WorkoutBuilder exercises={exerciseList} muscleGroups={muscleGroupList} workout={data} /></div></DashboardShell>;
 }

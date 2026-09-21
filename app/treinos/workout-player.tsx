@@ -17,13 +17,11 @@ type Step = {
   restSeconds: number | null;
   notes: string | null;
   load: string | null;
-  type: "single" | "bi_set" | "tri_set";
+  type: "single" | "bi_set" | "tri_set" | "combined";
   groupId: string;
 };
 
-const groupLabels = { single: "Exercício único", bi_set: "Bi-set", tri_set: "Tri-set" };
-
-export function WorkoutPlayer({ workoutId, name, steps, gender = "masculino", emailPending = false, preview = false, onClose }: { emailPending?: boolean; workoutId: string; name: string; steps: Step[]; gender?: "masculino" | "feminino"; preview?: boolean; onClose?: () => void }) {
+export function WorkoutPlayer({ workoutId, name, steps, gender = "masculino", emailPending = false, preview = false, onClose, backHref = "/treinos" }: { emailPending?: boolean; workoutId: string; name: string; steps: Step[]; gender?: "masculino" | "feminino"; preview?: boolean; onClose?: () => void; backHref?: string }) {
   const router = useRouter();
   const [finishing, startFinishing] = useTransition();
   const [finishError, setFinishError] = useState("");
@@ -48,9 +46,9 @@ export function WorkoutPlayer({ workoutId, name, steps, gender = "masculino", em
 
   return <main className="min-h-dvh bg-slate-50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] text-slate-950">
     <div className="mx-auto w-full max-w-2xl">
-      <header className="mb-4">{preview ? <button type="button" onClick={onClose} className="inline-block py-2 text-sm text-slate-500">← Fechar prévia</button> : <Link href="/treinos" className="inline-block py-2 text-sm text-slate-500">← Voltar</Link>}<h1 className="mt-2 text-2xl font-semibold tracking-tight">{name}</h1></header>
+      <header className="mb-4">{preview ? <button type="button" onClick={onClose} className="inline-block py-2 text-sm text-slate-500">← Fechar prévia</button> : <Link href={backHref} className="inline-block py-2 text-sm text-slate-500">← Voltar</Link>}<h1 className="mt-2 text-2xl font-semibold tracking-tight">{name}</h1></header>
       {emailPending ? <EmailVerificationNotice /> : null}
-      {groups.length ? <div className="space-y-3">{groups.map((group) => <section key={group.id} aria-label={groupLabels[group.exercises[0].type]} className="overflow-hidden rounded-xl border border-slate-300 bg-white py-1">
+      {groups.length ? <div className="space-y-3">{groups.map((group) => <section key={group.id} aria-label={group.exercises.length > 1 ? "Exercícios combinados" : "Série com um exercício"} className="overflow-hidden rounded-xl border border-slate-300 bg-white py-1">
         <div className="mx-4 divide-y divide-slate-100">{group.exercises.map((exercise) => <div key={exercise.id} className="grid grid-cols-[minmax(0,1fr)_32px_32px_auto] items-start gap-2 py-2">
           <h3 className="min-w-0"><ExerciseInfo name={exercise.name} description={exercise.description} gender={gender} /></h3>
           <div className="text-center"><p className="text-[10px] leading-4 text-slate-400">Séries</p><p className="flex h-8 items-center justify-center text-sm font-semibold tabular-nums">{exercise.sets}</p></div>

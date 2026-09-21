@@ -155,6 +155,7 @@ export const workoutGroupType = pgEnum("workout_group_type", [
   "single",
   "bi_set",
   "tri_set",
+  "combined",
 ]);
 
 export const workoutSheets = pgTable(

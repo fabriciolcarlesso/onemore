@@ -17,7 +17,7 @@ type DashboardPage = "overview" | "exercises" | "workouts" | "relationships" | "
 type UserRole = "admin" | "professor" | "aluno";
 
 const navigation: { label: string; icon: IconName; page: DashboardPage | null; href: string; roles?: UserRole[] }[] = [
-  { label: "Treinos", icon: "grid", page: "workouts", href: "/treinos" },
+  { label: "Treinos", icon: "grid", page: "workouts", href: "/treinos", roles: ["aluno", "admin"] },
   { label: "Planilhas", icon: "clipboard", page: "sheets", href: "/planilhas", roles: ["professor", "admin"] },
   { label: "Planos", icon: "card", page: "plans", href: "/planos", roles: ["aluno"] },
   { label: "Exercícios", icon: "dumbbell", page: "exercises", href: "/exercicios", roles: ["professor", "admin"] },
@@ -50,6 +50,7 @@ export function DashboardShell({
   completedWorkouts,
   recentWorkouts = [],
   activePage = "overview",
+  hideFooter = false,
 }: {
   user: DashboardUser;
   signOut: () => Promise<void>;
@@ -57,6 +58,7 @@ export function DashboardShell({
   completedWorkouts?: ReactNode;
   recentWorkouts?: { id: string; name: string }[];
   activePage?: DashboardPage;
+  hideFooter?: boolean;
 }) {
   const hasWorkouts = recentWorkouts.length > 0;
   const [collapsed, setCollapsed] = useState(false);
@@ -103,7 +105,7 @@ export function DashboardShell({
         </header>
 
         <main className="mx-auto w-full max-w-none flex-1 px-8 py-8 sm:px-10 sm:py-10 xl:px-12 xl:py-12">{user.role === "aluno" && !user.emailVerifiedAt ? <EmailVerificationNotice /> : null}{children ?? <><div className="mb-8"><p className="text-sm font-medium text-slate-400">Hoje</p><h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Bom treino, {user.name.split(" ")[0]}.</h1><p className="mt-2 text-sm text-slate-500">Acompanhe seu progresso e mantenha o ritmo.</p></div><section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{completedWorkouts ?? <article className="rounded-2xl bg-slate-950 p-7 text-white sm:p-9"><p className="text-sm text-slate-400">Treinos concluídos</p><p className="mt-5 text-4xl font-semibold tracking-tight">0</p><p className="mt-4 text-xs text-slate-400">Comece seu primeiro treino</p></article>}<article className="rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><p className="text-sm text-slate-400">Sequência atual</p><p className="mt-5 text-4xl font-semibold tracking-tight">0 <span className="text-base font-normal text-slate-400">dias</span></p><p className="mt-4 text-xs text-slate-400">Consistência gera resultado</p></article><article className="rounded-2xl border border-slate-200 bg-white p-7 sm:col-span-2 sm:p-9 xl:col-span-1"><p className="text-sm text-slate-400">Próximo passo</p><p className="mt-5 text-lg font-semibold">{hasWorkouts ? "Tudo pronto para treinar" : user.role === "aluno" ? "Peça seu treino ao professor" : "Monte seu primeiro treino"}</p>{hasWorkouts ? <ul className="mt-4 divide-y divide-slate-100">{recentWorkouts.map((workout) => <li key={workout.id} className="break-words py-3 text-sm text-slate-600">{workout.name}</li>)}</ul> : null}<Link href={hasWorkouts ? "/treinos" : user.role === "aluno" ? "/meus-professores" : "/treinos/novo"} className="mt-5 inline-block rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">{hasWorkouts ? "Ver todos os treinos" : user.role === "aluno" ? "Ver meus professores" : "Começar agora"}</Link></article></section><section className="mt-8 rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">Atividade recente</p><p className="mt-1 text-xs text-slate-400">Seus últimos movimentos aparecerão aqui.</p></div><Icon name="chart" className="size-5 text-slate-300" /></div><div className="mt-8 flex min-h-44 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">Nenhuma atividade registrada ainda.</div></section></>}</main>
-        <footer className="mx-auto mt-auto w-full border-t border-slate-200 px-8 py-6 text-right text-xs text-slate-400 sm:px-10 xl:px-12"><p>just<strong className="font-semibold text-slate-500">OneMore</strong></p><p className="mt-1">Desde 2026 · Simplificando seu treino</p></footer>
+        {hideFooter ? null : <footer className="mx-auto mt-auto w-full border-t border-slate-200 px-8 py-6 text-right text-xs text-slate-400 sm:px-10 xl:px-12"><p>just<strong className="font-semibold text-slate-500">OneMore</strong></p><p className="mt-1">Desde 2026 · Simplificando seu treino</p></footer>}
       </div>
     </div>
   );

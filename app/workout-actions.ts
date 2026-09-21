@@ -37,11 +37,10 @@ async function saveWorkout(formData: FormData, workoutId?: string): Promise<Work
   }
   const selectedDays = weekdays.filter((day) => submittedDays.includes(day.value)).map((day) => day.value);
 
-  let groups: { id?: string; muscleGroupId?: string | null; restSeconds?: number | null; notes?: string | null; type: "single" | "bi_set" | "tri_set"; exercises: { id?: string; exerciseId: string; sets: number; repetitions: number; load?: number }[] }[];
+  let groups: { id?: string; muscleGroupId?: string | null; restSeconds?: number | null; notes?: string | null; exercises: { id?: string; exerciseId: string; sets: number; repetitions: number; load?: number }[] }[];
   try { groups = JSON.parse(String(formData.get("groups") ?? "[]")); } catch { return { message: "Adicione ao menos um exercício válido." }; }
-  const limits = { single: 1, bi_set: 2, tri_set: 3 };
   if (!Array.isArray(groups) || !groups.length || groups.length > 100 || !groups.every((group) =>
-    group && Object.hasOwn(limits, group.type) && Array.isArray(group.exercises) && group.exercises.length === limits[group.type] &&
+    group && Array.isArray(group.exercises) && group.exercises.length > 0 &&
     new Set(group.exercises.map((item) => item?.exerciseId)).size === group.exercises.length &&
     (group.restSeconds == null || (Number.isInteger(group.restSeconds) && group.restSeconds >= 0 && group.restSeconds <= 3600)) &&
     (group.notes == null || (typeof group.notes === "string" && group.notes.trim().length <= 1000)) &&
@@ -80,7 +79,7 @@ async function saveWorkout(formData: FormData, workoutId?: string): Promise<Work
       : db.insert(workouts).values({ ...values, id, createdBy: user.id, sheetId: sheetId || null })];
     for (const [orderIndex, group] of groups.entries()) {
       const groupId = group.id ?? randomUUID();
-      const groupValues = { type: group.type, muscleGroupId: group.muscleGroupId ?? null, restSeconds: group.restSeconds ?? null, notes: group.notes?.trim() || null, orderIndex };
+      const groupValues = { type: group.exercises.length > 1 ? "combined" as const : "single" as const, muscleGroupId: group.muscleGroupId ?? null, restSeconds: group.restSeconds ?? null, notes: group.notes?.trim() || null, orderIndex };
       queries.push(group.id ? db.update(workoutGroups).set(groupValues).where(eq(workoutGroups.id, groupId)) : db.insert(workoutGroups).values({ ...groupValues, id: groupId, workoutId: id }));
       for (const [itemIndex, item] of group.exercises.entries()) {
         const previous = existingItems.find((entry) => entry.id === item.id);
@@ -103,8 +102,11 @@ async function saveWorkout(formData: FormData, workoutId?: string): Promise<Work
   revalidatePath(`/treinos/${id}`);
   revalidatePath(`/treinos/${id}/editar`);
   revalidatePath("/dashboard");
-  if (sheetId) revalidatePath("/planilhas");
-  redirect(workoutId ? `/treinos/${id}` : sheetId ? "/planilhas" : "/treinos");
+  if (sheetId) {
+    revalidatePath("/planilhas");
+    revalidatePath(`/planilhas/${sheetId}`);
+  }
+  redirect(workoutId ? `/treinos/${id}` : sheetId ? `/planilhas/${sheetId}` : "/treinos");
 }
 
 async function getOwnedWorkoutExercise(userId: string, workoutExerciseId: string) {

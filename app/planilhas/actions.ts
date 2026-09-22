@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { workoutSheets } from "@/db/schema";
+import { workoutSheets, workouts } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export type SheetFormState = { message: string };
@@ -27,4 +28,21 @@ export async function createWorkoutSheet(_previous: SheetFormState, formData: Fo
 
   revalidatePath("/planilhas");
   redirect(`/treinos/novo?planilha=${sheetId}`);
+}
+
+export async function deleteWorkoutSheet(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return;
+
+  const sheetId = String(formData.get("sheetId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(sheetId)) return;
+
+  const linkedWorkouts = await db.select({ id: workouts.id }).from(workouts).where(and(eq(workouts.sheetId, sheetId), eq(workouts.createdBy, user.id)));
+  if (linkedWorkouts.length) {
+    await db.delete(workouts).where(inArray(workouts.id, linkedWorkouts.map((workout) => workout.id)));
+  }
+  await db.delete(workoutSheets).where(and(eq(workoutSheets.id, sheetId), eq(workoutSheets.createdBy, user.id)));
+  revalidatePath("/planilhas");
+  revalidatePath(`/planilhas/${sheetId}`);
+  revalidatePath("/treinos");
 }

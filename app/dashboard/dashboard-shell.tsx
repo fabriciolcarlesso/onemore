@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { EmailVerificationNotice } from "@/app/ui/email-verification-notice";
 
@@ -63,10 +62,23 @@ export function DashboardShell({
   const hasWorkouts = recentWorkouts.length > 0;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [hoverExpanded, setHoverExpanded] = useState(false);
   const [locked, setLocked] = useState(false);
-  const router = useRouter();
   const sidebarExpanded = !collapsed || hoverExpanded || locked;
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setProfileMenuOpen(false);
+    }
+
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [profileMenuOpen]);
 
   function toggleSidebarLock() {
     if (locked) {
@@ -97,15 +109,30 @@ export function DashboardShell({
         <div className={`border-t border-slate-100 p-3 ${!sidebarExpanded ? "lg:flex lg:justify-center" : ""}`}><Link href="/perfil" className={`flex cursor-pointer items-center gap-3 rounded-xl bg-slate-50 p-3 ${!sidebarExpanded ? "lg:p-2" : ""}`}><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">{initials(user.name)}</span><span className={!sidebarExpanded ? "lg:hidden" : ""}><strong className="block truncate text-sm font-semibold">{user.name}</strong><span className="block text-xs capitalize text-slate-400">{user.role}</span></span></Link></div>
       </aside>
 
+      <button type="button" aria-label="Fechar menu da conta" tabIndex={profileMenuOpen ? 0 : -1} onClick={() => setProfileMenuOpen(false)} className={`fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-[2px] transition-opacity duration-200 ${profileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} />
+      <aside id="profile-panel" aria-label="Menu da conta" aria-hidden={!profileMenuOpen} inert={!profileMenuOpen} className={`fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col border-l border-slate-100 bg-white shadow-2xl shadow-slate-950/15 transition-transform duration-200 ease-in-out ${profileMenuOpen ? "translate-x-0" : "pointer-events-none translate-x-full"}`}>
+        <div className="flex h-20 items-center justify-end border-b border-slate-100 px-5">
+          <button type="button" aria-label="Fechar menu da conta" onClick={() => setProfileMenuOpen(false)} className="flex size-10 items-center justify-center rounded-full text-2xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-950">×</button>
+        </div>
+        <div className="flex items-center gap-3 border-b border-slate-100 p-5">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">{initials(user.name)}</span>
+          <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-950">{user.name}</p><p className="truncate text-xs text-slate-400">{user.email}</p></div>
+        </div>
+        <nav className="flex-1 space-y-1 px-3 py-4" aria-label="Opções da conta">
+          <Link href="/perfil" onClick={() => setProfileMenuOpen(false)} className="block rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950">Meu perfil</Link>
+        </nav>
+        <div className="border-t border-slate-100 p-3"><form action={signOut}><button type="submit" className="w-full rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950">Sair</button></form></div>
+      </aside>
+
       <div className={`flex min-h-dvh flex-col transition-[padding] duration-200 ${sidebarExpanded ? "lg:pl-64" : "lg:pl-[76px]"}`}>
         <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-100 bg-white/90 px-8 backdrop-blur sm:px-10 xl:px-12">
-          <div className="flex items-center gap-2"><button type="button" aria-label="Abrir menu" onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-6"><path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg></button>{activePage !== "overview" ? <button type="button" aria-label="Voltar" onClick={() => { const event = new Event("workout:back", { cancelable: true }); window.dispatchEvent(event); if (!event.defaultPrevented) router.back(); }} className="text-sm text-slate-400 hover:text-slate-950">← Voltar</button> : null}</div>
+          <button type="button" aria-label="Abrir menu" onClick={() => setMobileOpen(true)} className="-ml-2 rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-6"><path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg></button>
           <div className="hidden lg:block"><p className="text-sm font-medium text-slate-400">Área de trabalho</p><p className="text-base font-semibold">{activePage === "exercises" ? "Exercícios" : activePage === "workouts" ? "Treinos" : activePage === "sheets" ? "Planilhas" : activePage === "plans" ? "Planos" : activePage === "relationships" ? "Relacionamentos" : "Visão geral"}</p></div>
-          <div className="ml-auto flex items-center gap-3"><span className="hidden text-right sm:block"><strong className="block text-sm font-semibold">{user.name}</strong><span className="text-xs text-slate-400">Conta ativa</span></span><span className="flex size-10 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">{initials(user.name)}</span><form action={signOut}><button type="submit" aria-label="Sair" title="Sair" className="flex size-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-950"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M18 9l3 3m0 0-3 3m3-3H9" /></svg></button></form></div>
+          <button type="button" aria-label="Abrir menu da conta" aria-expanded={profileMenuOpen} aria-controls="profile-panel" onClick={() => setProfileMenuOpen((open) => !open)} className="ml-auto flex size-10 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950">{initials(user.name)}</button>
         </header>
 
-        <main className="mx-auto w-full max-w-none flex-1 px-8 py-8 sm:px-10 sm:py-10 xl:px-12 xl:py-12">{user.role === "aluno" && !user.emailVerifiedAt ? <EmailVerificationNotice /> : null}{children ?? <><div className="mb-8"><p className="text-sm font-medium text-slate-400">Hoje</p><h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Bom treino, {user.name.split(" ")[0]}.</h1><p className="mt-2 text-sm text-slate-500">Acompanhe seu progresso e mantenha o ritmo.</p></div><section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{completedWorkouts ?? <article className="rounded-2xl bg-slate-950 p-7 text-white sm:p-9"><p className="text-sm text-slate-400">Treinos concluídos</p><p className="mt-5 text-4xl font-semibold tracking-tight">0</p><p className="mt-4 text-xs text-slate-400">Comece seu primeiro treino</p></article>}<article className="rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><p className="text-sm text-slate-400">Sequência atual</p><p className="mt-5 text-4xl font-semibold tracking-tight">0 <span className="text-base font-normal text-slate-400">dias</span></p><p className="mt-4 text-xs text-slate-400">Consistência gera resultado</p></article><article className="rounded-2xl border border-slate-200 bg-white p-7 sm:col-span-2 sm:p-9 xl:col-span-1"><p className="text-sm text-slate-400">Próximo passo</p><p className="mt-5 text-lg font-semibold">{hasWorkouts ? "Tudo pronto para treinar" : user.role === "aluno" ? "Peça seu treino ao professor" : "Monte seu primeiro treino"}</p>{hasWorkouts ? <ul className="mt-4 divide-y divide-slate-100">{recentWorkouts.map((workout) => <li key={workout.id} className="break-words py-3 text-sm text-slate-600">{workout.name}</li>)}</ul> : null}<Link href={hasWorkouts ? "/treinos" : user.role === "aluno" ? "/meus-professores" : "/treinos/novo"} className="mt-5 inline-block rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">{hasWorkouts ? "Ver todos os treinos" : user.role === "aluno" ? "Ver meus professores" : "Começar agora"}</Link></article></section><section className="mt-8 rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">Atividade recente</p><p className="mt-1 text-xs text-slate-400">Seus últimos movimentos aparecerão aqui.</p></div><Icon name="chart" className="size-5 text-slate-300" /></div><div className="mt-8 flex min-h-44 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">Nenhuma atividade registrada ainda.</div></section></>}</main>
-        {hideFooter ? null : <footer className="mx-auto mt-auto w-full border-t border-slate-200 px-8 py-6 text-right text-xs text-slate-400 sm:px-10 xl:px-12"><p>just<strong className="font-semibold text-slate-500">OneMore</strong></p><p className="mt-1">Desde 2026 · Simplificando seu treino</p></footer>}
+        <main className="mx-auto w-full max-w-none flex-1 px-8 py-8 pb-32 sm:px-10 sm:py-10 sm:pb-32 xl:px-12 xl:py-12 xl:pb-32">{user.role === "aluno" && !user.emailVerifiedAt ? <EmailVerificationNotice /> : null}{children ?? <><div className="mb-8"><p className="text-sm font-medium text-slate-400">Hoje</p><h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Bom treino, {user.name.split(" ")[0]}.</h1><p className="mt-2 text-sm text-slate-500">Acompanhe seu progresso e mantenha o ritmo.</p></div><section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{completedWorkouts ?? <article className="rounded-2xl bg-slate-950 p-7 text-white sm:p-9"><p className="text-sm text-slate-400">Treinos concluídos</p><p className="mt-5 text-4xl font-semibold tracking-tight">0</p><p className="mt-4 text-xs text-slate-400">Comece seu primeiro treino</p></article>}<article className="rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><p className="text-sm text-slate-400">Sequência atual</p><p className="mt-5 text-4xl font-semibold tracking-tight">0 <span className="text-base font-normal text-slate-400">dias</span></p><p className="mt-4 text-xs text-slate-400">Consistência gera resultado</p></article><article className="rounded-2xl border border-slate-200 bg-white p-7 sm:col-span-2 sm:p-9 xl:col-span-1"><p className="text-sm text-slate-400">Próximo passo</p><p className="mt-5 text-lg font-semibold">{hasWorkouts ? "Tudo pronto para treinar" : user.role === "aluno" ? "Peça seu treino ao professor" : "Monte seu primeiro treino"}</p>{hasWorkouts ? <ul className="mt-4 divide-y divide-slate-100">{recentWorkouts.map((workout) => <li key={workout.id} className="break-words py-3 text-sm text-slate-600">{workout.name}</li>)}</ul> : null}<Link href={hasWorkouts ? "/treinos" : user.role === "aluno" ? "/meus-professores" : "/treinos/novo"} className="mt-5 inline-block rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">{hasWorkouts ? "Ver todos os treinos" : user.role === "aluno" ? "Ver meus professores" : "Começar agora"}</Link></article></section><section className="mt-8 rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">Atividade recente</p><p className="mt-1 text-xs text-slate-400">Seus últimos movimentos aparecerão aqui.</p></div><Icon name="chart" className="size-5 text-slate-300" /></div><div className="mt-8 flex min-h-44 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">Nenhuma atividade registrada ainda.</div></section></>}</main>
+        {hideFooter ? null : <footer className={`fixed bottom-0 right-0 z-20 w-auto border-t border-slate-200 bg-slate-50 px-8 py-4 text-right text-xs text-slate-400 sm:px-10 xl:px-12 ${sidebarExpanded ? "lg:left-64" : "lg:left-[76px]"}`}><p>just<strong className="font-semibold text-slate-500">OneMore</strong></p><p className="mt-1">Desde 2026 · Simplificando seu treino</p></footer>}
       </div>
     </div>
   );

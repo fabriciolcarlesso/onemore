@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -15,5 +16,13 @@ export default async function NewWorkoutPage({ searchParams }: { searchParams: P
   if (planilha && !sheet) redirect("/planilhas");
   const exerciseList = await db.select({ id: exercises.id, name: exercises.name, description: exercises.description }).from(exercises).orderBy(asc(exercises.name));
   const muscleGroupList = await db.select({ id: muscleGroups.id, name: muscleGroups.name }).from(muscleGroups).orderBy(asc(muscleGroups.name));
-  return <DashboardShell user={user} signOut={signOut} activePage={sheet ? "sheets" : "workouts"} hideFooter><div><div><span className="mb-3 block h-1 w-[30px] rounded-full bg-slate-950" />{sheet ? <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Etapa 2 de 2</p> : null}<p className="mt-1 text-sm font-medium text-slate-500">{sheet ? `Criar treino para a planilha ${sheet.name}` : "Treinos"}</p></div><WorkoutBuilder exercises={exerciseList} muscleGroups={muscleGroupList} sheetId={sheet?.id} /></div></DashboardShell>;
+  return <DashboardShell user={user} signOut={signOut} activePage={sheet ? "sheets" : "workouts"} hideFooter><div className="max-w-3xl">
+    <nav aria-label="Breadcrumb" className="mb-5 text-xs text-slate-400"><ol className="flex flex-wrap items-center gap-2">
+      <li><Link href={sheet ? `/planilhas/${sheet.id}` : "/treinos"} className="font-medium text-slate-500 transition hover:text-slate-700">← Voltar</Link></li>
+      <li aria-hidden="true">|</li>
+      {sheet ? <><li><Link href="/planilhas" className="transition hover:text-slate-600">Planilhas</Link></li><li aria-hidden="true">›</li><li><Link href={`/planilhas/${sheet.id}`} className="transition hover:text-slate-600">{sheet.name}</Link></li></> : <><li><Link href="/treinos" className="transition hover:text-slate-600">Treinos</Link></li></>}
+      <li aria-hidden="true">›</li><li aria-current="page" className="text-slate-400">Novo treino</li>
+    </ol></nav>
+    <div><div><span className="mb-3 block h-1 w-[30px] rounded-full bg-slate-950" /><p className="mt-1 text-sm font-medium text-slate-500">{sheet ? `Criar treino para a planilha ${sheet.name}` : "Treinos"}</p></div><WorkoutBuilder exercises={exerciseList} muscleGroups={muscleGroupList} sheetId={sheet?.id} /></div>
+  </div></DashboardShell>;
 }

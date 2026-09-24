@@ -36,6 +36,57 @@ button,
   cursor: pointer;
 }
 
+.breadcrumb {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.breadcrumb::before {
+  display: none;
+}
+
+.breadcrumb-list {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  gap: 0.5rem;
+}
+
+.breadcrumb-list > li {
+  flex-shrink: 0;
+}
+
+.breadcrumb-list > li:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  padding-right: 0.5rem;
+  background: var(--background);
+}
+
+.breadcrumb-list > li:first-child::after {
+  position: absolute;
+  top: 0;
+  right: -1.5rem;
+  bottom: 0;
+  width: 1.5rem;
+  background: linear-gradient(to right, var(--background), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.breadcrumb-list > li:nth-child(2) {
+  position: sticky;
+  left: 3.5rem;
+  z-index: 2;
+  padding-right: 0.25rem;
+  background: var(--background);
+}
+
 button:disabled,
 [aria-disabled="true"] {
   cursor: not-allowed;

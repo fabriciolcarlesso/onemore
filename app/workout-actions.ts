@@ -158,6 +158,47 @@ export async function getWorkoutExerciseLoadHistory(workoutExerciseId: string) {
   return { ok: true, entries: entries.map((entry) => ({ load: Number(entry.load), recordedAt: entry.recordedAt.toISOString() })) };
 }
 
+export async function reorderWorkoutExercises(workoutId: string, orders: { id: string; orderIndex: number }[]) {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return { ok: false, message: "Apenas professores podem reordenar exercícios." };
+  if (!/^[0-9a-f-]{36}$/i.test(workoutId) || !Array.isArray(orders) || orders.length > 500) return { ok: false, message: "Ordem inválida." };
+  try {
+    const [workout] = await db.select({ id: workouts.id, sheetId: workouts.sheetId }).from(workouts).where(and(eq(workouts.id, workoutId), eq(workouts.createdBy, user.id))).limit(1);
+    if (!workout) return { ok: false, message: "Treino não encontrado." };
+    const groupRows = await db.select({ id: workoutGroups.id }).from(workoutGroups).where(eq(workoutGroups.workoutId, workoutId));
+    const ownedItems = groupRows.length ? await db.select({ id: workoutExercises.id, groupId: workoutExercises.groupId }).from(workoutExercises).where(inArray(workoutExercises.groupId, groupRows.map((group) => group.id))) : [];
+    const ownedIds = new Set(ownedItems.map((item) => item.id));
+    if (orders.some((entry) => !entry || !ownedIds.has(entry.id) || !Number.isInteger(entry.orderIndex) || entry.orderIndex < 0)) return { ok: false, message: "Exercício inválido." };
+    const queries = orders.map((entry) => db.update(workoutExercises).set({ orderIndex: entry.orderIndex }).where(eq(workoutExercises.id, entry.id)));
+    if (queries.length) await db.batch(queries as [typeof queries[number], ...typeof queries]);
+    revalidatePath(`/treinos/${workoutId}`);
+    if (workout.sheetId) revalidatePath(`/planilhas/${workout.sheetId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "Não foi possível salvar a nova ordem." };
+  }
+}
+
+export async function reorderWorkoutGroups(workoutId: string, orders: { id: string; orderIndex: number }[]) {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return { ok: false, message: "Apenas professores podem reordenar séries." };
+  if (!/^[0-9a-f-]{36}$/i.test(workoutId) || !Array.isArray(orders) || orders.length > 100) return { ok: false, message: "Ordem inválida." };
+  try {
+    const [workout] = await db.select({ id: workouts.id, sheetId: workouts.sheetId }).from(workouts).where(and(eq(workouts.id, workoutId), eq(workouts.createdBy, user.id))).limit(1);
+    if (!workout) return { ok: false, message: "Treino não encontrado." };
+    const ownedGroups = await db.select({ id: workoutGroups.id }).from(workoutGroups).where(eq(workoutGroups.workoutId, workoutId));
+    const ownedIds = new Set(ownedGroups.map((group) => group.id));
+    if (orders.some((entry) => !entry || !ownedIds.has(entry.id) || !Number.isInteger(entry.orderIndex) || entry.orderIndex < 0)) return { ok: false, message: "Série inválida." };
+    const queries = orders.map((entry) => db.update(workoutGroups).set({ orderIndex: entry.orderIndex }).where(eq(workoutGroups.id, entry.id)));
+    if (queries.length) await db.batch(queries as [typeof queries[number], ...typeof queries]);
+    revalidatePath(`/treinos/${workoutId}`);
+    if (workout.sheetId) revalidatePath(`/planilhas/${workout.sheetId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "Não foi possível salvar a nova ordem." };
+  }
+}
+
 export async function completeWorkout(workoutId: string) {
   const user = await getCurrentUser();
   if (!user) return { ok: false, message: "Sua sessão expirou." };

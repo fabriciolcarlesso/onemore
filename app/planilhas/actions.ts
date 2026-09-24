@@ -30,6 +30,25 @@ export async function createWorkoutSheet(_previous: SheetFormState, formData: Fo
   redirect(`/treinos/novo?planilha=${sheetId}`);
 }
 
+export async function updateWorkoutSheet(_previous: SheetFormState, formData: FormData): Promise<SheetFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return { message: "Apenas professores e administradores podem editar planilhas." };
+
+  const sheetId = String(formData.get("sheetId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  if (!/^[0-9a-f-]{36}$/i.test(sheetId)) return { message: "Planilha inválida." };
+  if (name.length < 2 || name.length > 120) return { message: "Informe um nome entre 2 e 120 caracteres." };
+  if (description.length > 1000) return { message: "A descrição deve ter no máximo 1.000 caracteres." };
+
+  const [updated] = await db.update(workoutSheets).set({ name, description: description || null, updatedAt: new Date() }).where(and(eq(workoutSheets.id, sheetId), eq(workoutSheets.createdBy, user.id))).returning({ id: workoutSheets.id });
+  if (!updated) return { message: "Não foi possível encontrar esta planilha." };
+
+  revalidatePath("/planilhas");
+  revalidatePath(`/planilhas/${sheetId}`);
+  redirect(`/planilhas/${sheetId}`);
+}
+
 export async function deleteWorkoutSheet(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user || user.role === "aluno") return;

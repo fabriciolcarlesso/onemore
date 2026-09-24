@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { SelectMenu } from "@/app/ui/select-menu";
 import { NumberPicker } from "./number-picker";
 import { RestPicker } from "./rest-picker";
@@ -21,6 +22,18 @@ export function WorkoutGroupEditor({ group, index, exercises, onItemChange, onAd
   onIntervalChange: (seconds: number | null, unit: RestUnit) => void;
   onNotesChange: (value: string) => void;
 }) {
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  function toggleNotesBold() {
+    const textarea = notesRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = (group.notes ?? "").slice(start, end);
+    const replacement = selected ? `**${selected}**` : "****";
+    onNotesChange(`${(group.notes ?? "").slice(0, start)}${replacement}${(group.notes ?? "").slice(end)}`);
+    requestAnimationFrame(() => { textarea.focus(); textarea.setSelectionRange(start + (selected ? replacement.length : 2), start + (selected ? replacement.length : 2)); });
+  }
+
   return <div className="space-y-3">
     <div className="flex items-center justify-between gap-3">
       <h2 className="text-sm font-semibold text-slate-700">Exercício {index + 1}</h2>
@@ -39,7 +52,7 @@ export function WorkoutGroupEditor({ group, index, exercises, onItemChange, onAd
       </div>)}
       <div className="flex items-center gap-2 py-1"><span className="h-px flex-1 bg-slate-200" /><button type="button" onClick={onAddExercise} aria-label="Adicionar exercício à série" title="Adicionar exercício à série" className="flex size-8 shrink-0 items-center justify-center rounded-full"><span aria-hidden="true" className="flex size-5 items-center justify-center rounded-full bg-slate-950 text-xs font-medium leading-none text-white">+</span></button><span className="h-px flex-1 bg-slate-200" /></div>
       <div><span className="text-xs font-medium text-slate-500">Intervalo</span><RestPicker seconds={group.restSeconds} unit={group.restUnit ?? "seconds"} onChange={onIntervalChange} /></div>
-      <textarea aria-label="Observações da série" value={group.notes ?? ""} maxLength={1000} rows={3} onChange={(event) => onNotesChange(event.target.value)} placeholder="Observações da série" className="w-full resize-y rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-[13px] outline-none focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10" />
+      <div className="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-slate-950 focus-within:ring-2 focus-within:ring-slate-950/10"><div className="flex items-center px-3 pb-0 pt-3"><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={toggleNotesBold} title="Aplicar negrito" aria-label="Aplicar negrito" className="-ml-[10px] -mt-1 flex size-8 items-center justify-center rounded-md text-base font-bold text-slate-400 underline decoration-1 underline-offset-2 transition hover:bg-slate-100 hover:text-slate-700">B</button></div><textarea ref={notesRef} aria-label="Observações da série" value={group.notes ?? ""} maxLength={1000} rows={3} onChange={(event) => onNotesChange(event.target.value)} placeholder="Observações da série" className="w-full resize-y border-0 bg-transparent px-3 pb-3 pt-2 text-[13px] outline-none focus:ring-0" /></div>
     </div>
   </div>;
 }

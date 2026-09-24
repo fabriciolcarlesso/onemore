@@ -40,6 +40,12 @@ button,
   position: relative;
   overflow: hidden;
   white-space: nowrap;
+  margin-bottom: 1.25rem;
+}
+
+.breadcrumb + div {
+  margin-top: 0;
+  margin-bottom: 2rem;
 }
 
 .breadcrumb::before {
@@ -49,7 +55,7 @@ button,
 .breadcrumb-list {
   display: flex;
   flex-wrap: nowrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   width: 100%;
   min-width: 0;
   overflow: hidden;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { EmailVerificationNotice } from "@/app/ui/email-verification-notice";
 
 type DashboardUser = {
@@ -65,7 +66,30 @@ export function DashboardShell({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [hoverExpanded, setHoverExpanded] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [navigationLoading, setNavigationLoading] = useState(false);
+  const pathname = usePathname();
   const sidebarExpanded = !collapsed || hoverExpanded || locked;
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setNavigationLoading(false));
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
+
+  useEffect(() => {
+    function handleLinkClick(event: MouseEvent) {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target as HTMLElement;
+      const link = target.closest<HTMLAnchorElement>("a[href]");
+      if (!link || link.target === "_blank" || link.hasAttribute("download") || link.getAttribute("href")?.startsWith("#")) return;
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+      const url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin || (url.pathname === window.location.pathname && url.search === window.location.search)) return;
+      setNavigationLoading(true);
+    }
+    document.addEventListener("click", handleLinkClick, true);
+    return () => document.removeEventListener("click", handleLinkClick, true);
+  }, []);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -134,6 +158,7 @@ export function DashboardShell({
         <main className="mx-auto w-full max-w-none flex-1 px-8 py-8 pb-32 sm:px-10 sm:py-10 sm:pb-32 xl:px-12 xl:py-12 xl:pb-32">{user.role === "aluno" && !user.emailVerifiedAt ? <EmailVerificationNotice /> : null}{children ?? <><div className="mb-8"><p className="text-sm font-medium text-slate-400">Hoje</p><h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Bom treino, {user.name.split(" ")[0]}.</h1><p className="mt-2 text-sm text-slate-500">Acompanhe seu progresso e mantenha o ritmo.</p></div><section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{completedWorkouts ?? <article className="rounded-2xl bg-slate-950 p-7 text-white sm:p-9"><p className="text-sm text-slate-400">Treinos concluídos</p><p className="mt-5 text-4xl font-semibold tracking-tight">0</p><p className="mt-4 text-xs text-slate-400">Comece seu primeiro treino</p></article>}<article className="rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><p className="text-sm text-slate-400">Sequência atual</p><p className="mt-5 text-4xl font-semibold tracking-tight">0 <span className="text-base font-normal text-slate-400">dias</span></p><p className="mt-4 text-xs text-slate-400">Consistência gera resultado</p></article><article className="rounded-2xl border border-slate-200 bg-white p-7 sm:col-span-2 sm:p-9 xl:col-span-1"><p className="text-sm text-slate-400">Próximo passo</p><p className="mt-5 text-lg font-semibold">{hasWorkouts ? "Tudo pronto para treinar" : user.role === "aluno" ? "Peça seu treino ao professor" : "Monte seu primeiro treino"}</p>{hasWorkouts ? <ul className="mt-4 divide-y divide-slate-100">{recentWorkouts.map((workout) => <li key={workout.id} className="break-words py-3 text-sm text-slate-600">{workout.name}</li>)}</ul> : null}<Link href={hasWorkouts ? "/treinos" : user.role === "aluno" ? "/meus-professores" : "/treinos/novo"} className="mt-5 inline-block rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">{hasWorkouts ? "Ver todos os treinos" : user.role === "aluno" ? "Ver meus professores" : "Começar agora"}</Link></article></section><section className="mt-8 rounded-2xl border border-slate-200 bg-white p-7 sm:p-9"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">Atividade recente</p><p className="mt-1 text-xs text-slate-400">Seus últimos movimentos aparecerão aqui.</p></div><Icon name="chart" className="size-5 text-slate-300" /></div><div className="mt-8 flex min-h-44 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-400">Nenhuma atividade registrada ainda.</div></section></>}</main>
         {hideFooter ? null : <footer className={`fixed bottom-0 right-0 z-20 w-auto border-t border-slate-200 bg-slate-50 px-8 py-4 text-right text-xs text-slate-400 sm:px-10 xl:px-12 ${sidebarExpanded ? "lg:left-64" : "lg:left-[76px]"}`}><p>just<strong className="font-semibold text-slate-500">OneMore</strong></p><p className="mt-1">Desde 2026 · Simplificando seu treino</p></footer>}
       </div>
+      {navigationLoading ? <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 backdrop-blur-[1px]" aria-live="polite" aria-label="Carregando página"><span className="size-8 animate-spin rounded-full border-2 border-white/35 border-t-white" /></div> : null}
     </div>
   );
 }

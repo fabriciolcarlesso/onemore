@@ -199,6 +199,28 @@ export async function reorderWorkoutGroups(workoutId: string, orders: { id: stri
   }
 }
 
+export async function deleteWorkoutGroup(workoutId: string, groupId: string) {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return { ok: false, message: "Apenas professores podem excluir séries." };
+  if (!/^[0-9a-f-]{36}$/i.test(workoutId) || !/^[0-9a-f-]{36}$/i.test(groupId)) return { ok: false, message: "Série inválida." };
+  try {
+    const [workout] = await db.select({ id: workouts.id, sheetId: workouts.sheetId }).from(workouts).where(and(eq(workouts.id, workoutId), eq(workouts.createdBy, user.id))).limit(1);
+    if (!workout) return { ok: false, message: "Treino não encontrado." };
+    const [group] = await db.select({ id: workoutGroups.id }).from(workoutGroups).where(and(eq(workoutGroups.id, groupId), eq(workoutGroups.workoutId, workoutId))).limit(1);
+    if (!group) return { ok: false, message: "Série não encontrada." };
+    await db.delete(workoutGroups).where(eq(workoutGroups.id, groupId));
+    revalidatePath(`/treinos/${workoutId}`);
+    if (workout.sheetId) revalidatePath(`/planilhas/${workout.sheetId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "Não foi possível excluir a série." };
+  }
+}
+
+export async function deleteWorkoutGroupFromForm(formData: FormData): Promise<void> {
+  await deleteWorkoutGroup(String(formData.get("workoutId") ?? ""), String(formData.get("groupId") ?? ""));
+}
+
 export async function completeWorkout(workoutId: string) {
   const user = await getCurrentUser();
   if (!user) return { ok: false, message: "Sua sessão expirou." };

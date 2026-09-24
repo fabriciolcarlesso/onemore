@@ -65,3 +65,16 @@ export async function deleteWorkoutSheet(formData: FormData): Promise<void> {
   revalidatePath(`/planilhas/${sheetId}`);
   revalidatePath("/treinos");
 }
+
+export async function deleteWorkoutFromSheet(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return;
+  const workoutId = String(formData.get("workoutId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(workoutId)) return;
+  const [workout] = await db.select({ id: workouts.id, sheetId: workouts.sheetId }).from(workouts).where(and(eq(workouts.id, workoutId), eq(workouts.createdBy, user.id))).limit(1);
+  if (!workout) return;
+  await db.delete(workouts).where(and(eq(workouts.id, workoutId), eq(workouts.createdBy, user.id)));
+  revalidatePath("/planilhas");
+  revalidatePath("/treinos");
+  if (workout.sheetId) revalidatePath(`/planilhas/${workout.sheetId}`);
+}

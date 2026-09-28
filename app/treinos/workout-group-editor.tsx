@@ -45,7 +45,7 @@ export function WorkoutGroupEditor({ group, index, exercises, onItemChange, onAd
         <SwipeableExercise canRemove={group.exercises.length > 1} onRemove={() => onRemoveExercise(itemIndex)} label={`exercício ${itemIndex + 1} da série`}>
           <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_2.75rem] items-end gap-2">
             <SelectMenu compact value={item.exerciseId} onChange={(value) => onItemChange(itemIndex, "exerciseId", value)} options={exercises.filter((exercise) => !group.exercises.some((entry, position) => position !== itemIndex && entry.exerciseId === exercise.id)).map((exercise) => ({ value: exercise.id, label: exercise.name }))} />
-            <div className="text-center text-[10px] font-medium text-slate-500">Séries<NumberPicker compact value={item.sets} label="séries" onChange={(value) => onItemChange(itemIndex, "sets", String(value))} /></div>
+            <div className="text-center text-[10px] font-medium text-slate-500">Séries<NumberPicker compact max={12} value={item.sets} label="séries" onChange={(value) => onItemChange(itemIndex, "sets", String(value))} /></div>
             <div className="text-center text-[10px] font-medium text-slate-500">Reps<NumberPicker compact value={item.repetitions} label="repetições" onChange={(value) => onItemChange(itemIndex, "repetitions", String(value))} /></div>
           </div>
         </SwipeableExercise>

@@ -149,6 +149,36 @@ export async function updateWorkoutExerciseLoad(workoutExerciseId: string, value
   }
 }
 
+export async function updateWorkoutExerciseSets(workoutExerciseId: string, sets: number) {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return { ok: false, message: "Apenas professores podem alterar séries." };
+  if (!Number.isInteger(sets) || sets < 1 || sets > 12) return { ok: false, message: "Quantidade de séries inválida." };
+  const item = await getOwnedWorkoutExercise(user.id, workoutExerciseId);
+  if (!item) return { ok: false, message: "Exercício não encontrado." };
+  try {
+    await db.update(workoutExercises).set({ sets }).where(eq(workoutExercises.id, workoutExerciseId));
+    revalidatePath("/treinos");
+    return { ok: true, sets };
+  } catch {
+    return { ok: false, message: "Não foi possível atualizar as séries." };
+  }
+}
+
+export async function updateWorkoutExerciseRepetitions(workoutExerciseId: string, repetitions: number) {
+  const user = await getCurrentUser();
+  if (!user || user.role === "aluno") return { ok: false, message: "Apenas professores podem alterar repetições." };
+  if (!Number.isInteger(repetitions) || repetitions < 1 || repetitions > 1000) return { ok: false, message: "Quantidade de repetições inválida." };
+  const item = await getOwnedWorkoutExercise(user.id, workoutExerciseId);
+  if (!item) return { ok: false, message: "Exercício não encontrado." };
+  try {
+    await db.update(workoutExercises).set({ repetitions }).where(eq(workoutExercises.id, workoutExerciseId));
+    revalidatePath("/treinos");
+    return { ok: true, repetitions };
+  } catch {
+    return { ok: false, message: "Não foi possível atualizar as repetições." };
+  }
+}
+
 export async function getWorkoutExerciseLoadHistory(workoutExerciseId: string) {
   const user = await getCurrentUser();
   if (!user) return { ok: false, entries: [], message: "Sua sessão expirou." };

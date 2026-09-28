@@ -58,7 +58,7 @@ export async function assignWorkout(studentId: string, sourceWorkoutId: string) 
       const exercises = items.filter((item) => item.groupId === group.id);
       if (exercises.length) queries.push(db.insert(workoutExercises).values(exercises.map((item) => ({ groupId, exerciseId: item.exerciseId, sets: item.sets, repetitions: item.repetitions, load: item.load, orderIndex: item.orderIndex }))));
     }
-    queries.push(db.insert(studentWorkouts).values({ studentId, teacherId: teacher.id, sourceWorkoutId, workoutId }));
+    queries.push(db.insert(studentWorkouts).values({ studentId, teacherId: teacher.id, sourceWorkoutId, workoutId, sheetId: source.sheetId }));
     await db.batch(queries);
     revalidatePath("/meus-alunos");
     revalidatePath("/treinos", "layout");

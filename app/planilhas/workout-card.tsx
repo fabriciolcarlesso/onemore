@@ -101,7 +101,7 @@ export function WorkoutCard({ workout }: { workout: WorkoutCardData }) {
     <Link href={`/treinos/${workout.id}`} onClick={(event) => { if (suppressClick.current) { event.preventDefault(); suppressClick.current = false; } }} className="flex min-w-0 items-start px-5 pt-5 pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950">
       <div className="min-w-0 flex-1">
         <div className="relative"><h2 className="font-semibold">{workout.name}</h2></div>
-        <span className="mt-2 inline-flex items-center text-xs text-slate-400"><span>{workout.exerciseCount === 1 ? "Exercício" : "Exercícios"}: {workout.exerciseCount}</span><span aria-hidden="true" className="mx-1">|</span><span>Tempo estimado: {workout.estimatedMinutes} {workout.estimatedMinutes === 1 ? "minuto" : "minutos"}</span></span>
+        <span className="mt-1 inline-flex items-center text-xs text-slate-400"><span>{workout.exerciseCount === 1 ? "Exercício" : "Exercícios"}: {workout.exerciseCount}</span><span aria-hidden="true" className="mx-0.5">|</span><span>Tempo estimado: {workout.estimatedMinutes} {workout.estimatedMinutes === 1 ? "minuto" : "minutos"}</span></span>
         <WorkoutDays days={workout.weekdays} />
         {workout.description ? <div className={`relative overflow-hidden transition-[max-height] duration-700 ease-in-out ${expanded ? "max-h-[40rem]" : "max-h-[4.5rem]"}`}><RichDescription text={workout.description} className="mt-3 text-sm leading-6 text-slate-500" />{showFade ? <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-linear-to-t from-white via-white/90 to-transparent" /> : null}</div> : <p className="mt-3 text-sm text-slate-400">Sem descrição.</p>}
       </div>

@@ -17,7 +17,7 @@ export default async function WorkoutDetailsPage({ params }: { params: Promise<{
   if (!workout) notFound();
 
   const groups = await db.select({ id: workoutGroups.id, type: workoutGroups.type, restSeconds: workoutGroups.restSeconds, orderIndex: workoutGroups.orderIndex }).from(workoutGroups).where(eq(workoutGroups.workoutId, workout.id)).orderBy(asc(workoutGroups.orderIndex));
-  const items = groups.length ? await db.select({ id: workoutExercises.id, groupId: workoutExercises.groupId, name: exercises.name, sets: workoutExercises.sets, repetitions: workoutExercises.repetitions, orderIndex: workoutExercises.orderIndex }).from(workoutExercises).innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id)).where(inArray(workoutExercises.groupId, groups.map((group) => group.id))).orderBy(asc(workoutExercises.orderIndex)) : [];
+  const items = groups.length ? await db.select({ id: workoutExercises.id, groupId: workoutExercises.groupId, name: exercises.name, sets: workoutExercises.sets, repetitions: workoutExercises.repetitions, load: workoutExercises.load, orderIndex: workoutExercises.orderIndex }).from(workoutExercises).innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id)).where(inArray(workoutExercises.groupId, groups.map((group) => group.id))).orderBy(asc(workoutExercises.orderIndex)) : [];
   const groupedItems = groups.map((group) => ({ ...group, items: items.filter((item) => item.groupId === group.id) }));
 
   return <DashboardShell user={user} signOut={signOut} activePage={workout.sheetId ? "sheets" : "workouts"}>
@@ -34,6 +34,7 @@ export default async function WorkoutDetailsPage({ params }: { params: Promise<{
         {workout.description ? <ExpandableDescription text={workout.description} /> : null}
       </div>
       <WorkoutExerciseList workoutId={workout.id} groups={groupedItems} canReorder={user.role !== "aluno"} />
+      {user.role === "aluno" ? <Link href={`/treinos/${workout.id}/fazer`} className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800">Treinar</Link> : null}
       {user.role !== "aluno" ? <Link href={`/treinos/${workout.id}/editar`} aria-label="Adicionar exercício" title="Adicionar exercício" className="fixed right-8 bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] z-30 flex size-16 items-center justify-center rounded-full bg-slate-950 text-4xl font-light leading-none text-white shadow-lg shadow-slate-950/20 transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-950 sm:right-10 xl:right-12">+</Link> : null}
     </div>
   </DashboardShell>;

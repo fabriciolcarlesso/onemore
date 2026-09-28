@@ -247,9 +247,11 @@ export const studentWorkouts = pgTable("student_workouts", {
   teacherId: uuid("teacher_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   sourceWorkoutId: uuid("source_workout_id").notNull().references(() => workouts.id, { onDelete: "cascade" }),
   workoutId: uuid("workout_id").notNull().references(() => workouts.id, { onDelete: "cascade" }),
+  sheetId: uuid("sheet_id").references(() => workoutSheets.id, { onDelete: "set null" }),
   assignedAt: timestamp("assigned_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   primaryKey({ columns: [table.studentId, table.sourceWorkoutId] }),
+  index("student_workouts_sheet_id_idx").on(table.sheetId),
   uniqueIndex("student_workouts_workout_unique").on(table.workoutId),
 ]);
 

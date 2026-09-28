@@ -18,7 +18,7 @@ type UserRole = "admin" | "professor" | "aluno";
 
 const navigation: { label: string; icon: IconName; page: DashboardPage | null; href: string; roles?: UserRole[] }[] = [
   { label: "Treinos", icon: "grid", page: "workouts", href: "/treinos", roles: ["aluno", "admin"] },
-  { label: "Planilhas", icon: "clipboard", page: "sheets", href: "/planilhas", roles: ["professor", "admin"] },
+  { label: "Planilhas", icon: "clipboard", page: "sheets", href: "/planilhas", roles: ["professor", "admin", "aluno"] },
   { label: "Planos", icon: "card", page: "plans", href: "/planos", roles: ["aluno"] },
   { label: "Exercícios", icon: "dumbbell", page: "exercises", href: "/exercicios", roles: ["professor", "admin"] },
   { label: "Meus alunos", icon: "users", page: "relationships", href: "/meus-alunos", roles: ["professor"] },

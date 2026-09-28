@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { and, asc, eq, gte, lt, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { workoutCompletions, workoutExerciseLoadHistory, workoutExercises, workoutGroups, workoutSheets, workouts } from "@/db/schema";
+import { studentWorkouts, workoutCompletions, workoutExerciseLoadHistory, workoutExercises, workoutGroups, workoutSheets, workouts } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import { weekdays } from "@/lib/weekdays";
 
@@ -97,6 +97,7 @@ async function saveWorkout(formData: FormData, workoutId?: string): Promise<Work
     const removedGroups = existingGroups.filter((group) => !groupIds.has(group.id)).map((group) => group.id);
     if (removedGroups.length) queries.push(db.delete(workoutGroups).where(inArray(workoutGroups.id, removedGroups)));
     await db.batch(queries);
+    if (workoutId) await syncStudentWorkoutCopies(id);
   } catch { return { message: "Não foi possível salvar o treino." }; }
   revalidatePath("/treinos");
   revalidatePath(`/treinos/${id}`);
@@ -112,6 +113,34 @@ async function saveWorkout(formData: FormData, workoutId?: string): Promise<Work
 async function getOwnedWorkoutExercise(userId: string, workoutExerciseId: string) {
   const [item] = await db.select({ id: workoutExercises.id, load: workoutExercises.load }).from(workoutExercises).innerJoin(workoutGroups, eq(workoutExercises.groupId, workoutGroups.id)).innerJoin(workouts, eq(workoutGroups.workoutId, workouts.id)).where(and(eq(workoutExercises.id, workoutExerciseId), eq(workouts.createdBy, userId))).limit(1);
   return item;
+}
+
+async function syncStudentWorkoutCopies(sourceWorkoutId: string) {
+  const [source] = await db.select({ id: workouts.id, name: workouts.name, description: workouts.description, weekdays: workouts.weekdays, sheetId: workouts.sheetId }).from(workouts).where(eq(workouts.id, sourceWorkoutId)).limit(1);
+  if (!source) return;
+  const assignments = await db.select({ workoutId: studentWorkouts.workoutId }).from(studentWorkouts).where(eq(studentWorkouts.sourceWorkoutId, sourceWorkoutId));
+  if (!assignments.length) return;
+  const sourceGroups = await db.select().from(workoutGroups).where(eq(workoutGroups.workoutId, sourceWorkoutId)).orderBy(asc(workoutGroups.orderIndex));
+  const sourceItems = sourceGroups.length ? await db.select().from(workoutExercises).where(inArray(workoutExercises.groupId, sourceGroups.map((group) => group.id))).orderBy(asc(workoutExercises.orderIndex)) : [];
+
+  for (const assignment of assignments) {
+    const targetGroups = await db.select().from(workoutGroups).where(eq(workoutGroups.workoutId, assignment.workoutId));
+    const targetItems = targetGroups.length ? await db.select().from(workoutExercises).where(inArray(workoutExercises.groupId, targetGroups.map((group) => group.id))) : [];
+    const loads = new Map(targetItems.map((item) => {
+      const targetGroup = targetGroups.find((group) => group.id === item.groupId);
+      return [`${targetGroup?.orderIndex ?? 0}:${item.exerciseId}`, item.load];
+    }));
+    await db.update(workouts).set({ name: source.name, description: source.description, weekdays: source.weekdays, sheetId: source.sheetId }).where(eq(workouts.id, assignment.workoutId));
+    if (targetGroups.length) await db.delete(workoutGroups).where(eq(workoutGroups.workoutId, assignment.workoutId));
+    const queries: BatchItem<"pg">[] = [];
+    for (const sourceGroup of sourceGroups) {
+      const groupId = randomUUID();
+      queries.push(db.insert(workoutGroups).values({ id: groupId, workoutId: assignment.workoutId, type: sourceGroup.type, muscleGroupId: sourceGroup.muscleGroupId, restSeconds: sourceGroup.restSeconds, notes: sourceGroup.notes, orderIndex: sourceGroup.orderIndex }));
+      const items = sourceItems.filter((item) => item.groupId === sourceGroup.id);
+      if (items.length) queries.push(db.insert(workoutExercises).values(items.map((item) => ({ groupId, exerciseId: item.exerciseId, sets: item.sets, repetitions: item.repetitions, load: loads.get(`${sourceGroup.orderIndex}:${item.exerciseId}`) ?? item.load, orderIndex: item.orderIndex }))));
+    }
+    if (queries.length) await db.batch(queries as [typeof queries[number], ...typeof queries]);
+  }
 }
 
 export async function updateWorkoutExerciseLoad(workoutExerciseId: string, value: number, mode: "delta" | "absolute" = "delta") {

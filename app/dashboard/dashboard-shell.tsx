@@ -13,7 +13,7 @@ type DashboardUser = {
 };
 
 type IconName = "grid" | "dumbbell" | "users" | "chart" | "settings" | "card" | "clipboard";
-type DashboardPage = "overview" | "exercises" | "workouts" | "relationships" | "plans" | "sheets";
+type DashboardPage = "overview" | "exercises" | "muscle-groups" | "workouts" | "relationships" | "plans" | "sheets";
 type UserRole = "admin" | "professor" | "aluno";
 
 const navigation: { label: string; icon: IconName; page: DashboardPage | null; href: string; roles?: UserRole[] }[] = [
@@ -21,6 +21,7 @@ const navigation: { label: string; icon: IconName; page: DashboardPage | null; h
   { label: "Planilhas", icon: "clipboard", page: "sheets", href: "/planilhas", roles: ["professor", "admin", "aluno"] },
   { label: "Planos", icon: "card", page: "plans", href: "/planos", roles: ["aluno"] },
   { label: "Exercícios", icon: "dumbbell", page: "exercises", href: "/exercicios", roles: ["professor", "admin"] },
+  { label: "Grupos musculares", icon: "dumbbell", page: "muscle-groups", href: "/grupos-musculares", roles: ["professor", "admin"] },
   { label: "Meus alunos", icon: "users", page: "relationships", href: "/meus-alunos", roles: ["professor"] },
   { label: "Meus professores", icon: "users", page: "relationships", href: "/meus-professores", roles: ["aluno"] },
 ];
@@ -151,7 +152,7 @@ export function DashboardShell({
       <div className={`flex min-h-dvh flex-col transition-[padding] duration-200 ${sidebarExpanded ? "lg:pl-64" : "lg:pl-[76px]"}`}>
         <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-100 bg-white/90 px-8 backdrop-blur sm:px-10 xl:px-12">
           <button type="button" aria-label="Abrir menu" onClick={() => setMobileOpen(true)} className="-ml-2 rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-6"><path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg></button>
-          <div className="hidden lg:block"><p className="text-sm font-medium text-slate-400">Área de trabalho</p><p className="text-base font-semibold">{activePage === "exercises" ? "Exercícios" : activePage === "workouts" ? "Treinos" : activePage === "sheets" ? "Planilhas" : activePage === "plans" ? "Planos" : activePage === "relationships" ? "Relacionamentos" : "Visão geral"}</p></div>
+          <div className="hidden lg:block"><p className="text-sm font-medium text-slate-400">Área de trabalho</p><p className="text-base font-semibold">{activePage === "exercises" ? "Exercícios" : activePage === "muscle-groups" ? "Grupos musculares" : activePage === "workouts" ? "Treinos" : activePage === "sheets" ? "Planilhas" : activePage === "plans" ? "Planos" : activePage === "relationships" ? "Relacionamentos" : "Visão geral"}</p></div>
           <button type="button" aria-label="Abrir menu da conta" aria-expanded={profileMenuOpen} aria-controls="profile-panel" onClick={() => setProfileMenuOpen((open) => !open)} className="ml-auto flex size-10 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950">{initials(user.name)}</button>
         </header>
 

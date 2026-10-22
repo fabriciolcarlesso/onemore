@@ -300,9 +300,17 @@ export const muscleGroups = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 80 }).notNull(),
+    description: text("description").notNull(),
   },
   (table) => [uniqueIndex("muscle_groups_name_unique").on(table.name)],
 );
+
+export const exerciseMuscleRole = pgEnum("exercise_muscle_role", [
+  "principal",
+  "auxiliar",
+  "sinergista",
+  "estabilizador",
+]);
 
 export const exerciseMuscleGroups = pgTable(
   "exercise_muscle_groups",
@@ -313,6 +321,9 @@ export const exerciseMuscleGroups = pgTable(
     muscleGroupId: uuid("muscle_group_id")
       .notNull()
       .references(() => muscleGroups.id, { onDelete: "cascade" }),
+    role: exerciseMuscleRole("role").default("auxiliar").notNull(),
+    importanceOrder: integer("importance_order").default(0).notNull(),
+    notes: text("notes"),
   },
   (table) => [
     primaryKey({ columns: [table.exerciseId, table.muscleGroupId] }),
@@ -321,4 +332,101 @@ export const exerciseMuscleGroups = pgTable(
   ],
 );
 
+export const exercisePrimaryMuscles = pgTable(
+  "exercise_primary_muscles",
+  {
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    muscleGroupId: uuid("muscle_group_id").notNull().references(() => muscleGroups.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.exerciseId, table.muscleGroupId] }),
+    index("exercise_primary_muscles_exercise_id_idx").on(table.exerciseId),
+    index("exercise_primary_muscles_muscle_group_id_idx").on(table.muscleGroupId),
+  ],
+);
+
 export type MuscleGroup = typeof muscleGroups.$inferSelect;
+
+export const exerciseDocumentStatus = pgEnum("exercise_document_status", [
+  "uploaded",
+  "processing",
+  "ready",
+  "error",
+]);
+
+export const exerciseDocuments = pgTable(
+  "exercise_documents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    exerciseId: uuid("exercise_id")
+      .notNull()
+      .references(() => exercises.id, { onDelete: "cascade" }),
+    originalName: varchar("original_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 120 }).notNull(),
+    fileSize: integer("file_size").notNull(),
+    pageCount: integer("page_count"),
+    checksum: varchar("checksum", { length: 64 }),
+    content: text("content").notNull(),
+    status: exerciseDocumentStatus("status").default("uploaded").notNull(),
+    extractedText: text("extracted_text"),
+    errorMessage: text("error_message"),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("exercise_documents_exercise_id_idx").on(table.exerciseId),
+    index("exercise_documents_status_idx").on(table.status),
+  ],
+);
+
+export const exercisePhases = pgTable(
+  "exercise_phases",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 80 }).notNull(),
+    orderIndex: integer("order_index").notNull(),
+    description: text("description"),
+    imageUrl: text("image_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("exercise_phases_exercise_id_idx").on(table.exerciseId)],
+);
+
+export const joints = pgTable("joints", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  region: varchar("region", { length: 80 }),
+  description: text("description"),
+}, (table) => [uniqueIndex("joints_name_unique").on(table.name)]);
+
+export const exerciseJoints = pgTable(
+  "exercise_joints",
+  {
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    jointId: uuid("joint_id").notNull().references(() => joints.id, { onDelete: "cascade" }),
+    movement: varchar("movement", { length: 120 }),
+    role: varchar("role", { length: 80 }),
+    orderIndex: integer("order_index").default(0).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.exerciseId, table.jointId] }),
+    index("exercise_joints_joint_id_idx").on(table.jointId),
+  ],
+);
+
+export const equipment = pgTable("equipment", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+}, (table) => [uniqueIndex("equipment_name_unique").on(table.name)]);
+
+export const exerciseEquipment = pgTable(
+  "exercise_equipment",
+  {
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    equipmentId: uuid("equipment_id").notNull().references(() => equipment.id, { onDelete: "cascade" }),
+    notes: text("notes"),
+  },
+  (table) => [primaryKey({ columns: [table.exerciseId, table.equipmentId] })],
+);

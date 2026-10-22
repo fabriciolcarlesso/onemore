@@ -35,7 +35,7 @@ export default async function WorkoutDetailsPage({ params }: { params: Promise<{
       </div>
       <WorkoutExerciseList workoutId={workout.id} groups={groupedItems} canReorder={user.role !== "aluno"} />
       {user.role === "aluno" ? <Link href={`/treinos/${workout.id}/fazer`} className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-slate-950 text-sm font-semibold text-white transition hover:bg-slate-800">Treinar</Link> : null}
-      {user.role !== "aluno" ? <Link href={`/treinos/${workout.id}/editar`} aria-label="Adicionar exercício" title="Adicionar exercício" className="fixed right-8 bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] z-30 flex size-16 items-center justify-center rounded-full bg-slate-950 text-4xl font-light leading-none text-white shadow-lg shadow-slate-950/20 transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-950 sm:right-10 xl:right-12">+</Link> : null}
+      {user.role !== "aluno" ? <Link href={`/treinos/${workout.id}/editar?novoExercicio=1`} aria-label="Adicionar exercício" title="Adicionar exercício" className="fixed right-8 bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] z-30 flex size-16 items-center justify-center rounded-full bg-slate-950 text-4xl font-light leading-none text-white shadow-lg shadow-slate-950/20 transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-950 sm:right-10 xl:right-12">+</Link> : null}
     </div>
   </DashboardShell>;
 }

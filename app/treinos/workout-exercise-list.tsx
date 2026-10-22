@@ -13,7 +13,7 @@ export function WorkoutExerciseList({ workoutId, groups, canReorder }: { workout
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 });
   const [draggingGroupId, setDraggingGroupId] = useState<string | null>(null);
-  const [swipeGroupId, setSwipeGroupId] = useState<string | null>(null);
+  const [swipeGroupId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [confirmDeleteGroupId, setConfirmDeleteGroupId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -114,32 +114,19 @@ export function WorkoutExerciseList({ workoutId, groups, canReorder }: { workout
     holdTimer.current = null;
   }
 
-  function beginGroupHold(event: React.PointerEvent<HTMLElement>, groupId: string) {
-    if (event.button !== 0 || pending || !canReorder) return;
-    setSwipeGroupId(groupId);
-    setSwipeOffset(0);
-    swipeStart.current = { x: event.clientX, y: event.clientY, axis: null };
-    event.currentTarget.setPointerCapture(event.pointerId);
-    if (!(event.target as HTMLElement).closest("[data-group-handle]")) return;
-    swipeStart.current = null;
-    clearHold();
-    startPoint.current = { x: event.clientX, y: event.clientY };
-    dragStartTop.current = groupRefs.current.get(groupId)?.getBoundingClientRect().top ?? 0;
-    dragPointerDelta.current = { x: 0, y: 0 };
-    draggingGroupRef.current = groupId;
-    setDraggingGroupId(groupId);
-    requestAnimationFrame(() => updateDraggedPosition(groupId));
-  }
-
   function beginItemDrag(event: React.PointerEvent<HTMLDivElement>, itemId: string) {
     if (!canReorder || event.button !== 0 || pending || (event.target as HTMLElement).closest("button, input")) return;
     event.stopPropagation();
-    setDraggingId(itemId);
     startPoint.current = { x: event.clientX, y: event.clientY };
     itemStartTop.current = event.currentTarget.getBoundingClientRect().top;
     itemDragDelta.current = { x: 0, y: 0 };
     lastPointer.current = { x: event.clientX, y: event.clientY };
     event.currentTarget.setPointerCapture(event.pointerId);
+    clearHold();
+    holdTimer.current = setTimeout(() => {
+      setDraggingId(itemId);
+      itemPositions.current = new Map([...itemRefs.current].map(([id, element]) => [id, element.getBoundingClientRect().top]));
+    }, 260);
   }
 
   function moveItem(itemId: string, targetId: string) {
@@ -186,6 +173,21 @@ export function WorkoutExerciseList({ workoutId, groups, canReorder }: { workout
       groupsRef.current = reordered;
       return reordered;
     });
+  }
+
+  function moveGroupByOffset(groupId: string, offset: -1 | 1) {
+    if (pending) return;
+    const current = groupsRef.current;
+    const index = current.findIndex((group) => group.id === groupId);
+    const targetIndex = index + offset;
+    if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return;
+    const next = [...current];
+    const [moved] = next.splice(index, 1);
+    next.splice(targetIndex, 0, moved);
+    const reordered = next.map((group, position) => ({ ...group, orderIndex: position }));
+    groupsRef.current = reordered;
+    setCurrentGroups(reordered);
+    startTransition(async () => { await reorderWorkoutGroups(workoutId, reordered.map((group) => ({ id: group.id, orderIndex: group.orderIndex }))); });
   }
 
   function handleMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -257,8 +259,9 @@ export function WorkoutExerciseList({ workoutId, groups, canReorder }: { workout
   }
 
   return <div className="space-y-5" onPointerMove={handleMove} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
-    {currentGroups.map((group) => <div key={group.id} ref={(element) => { if (element) groupRefs.current.set(group.id, element); else groupRefs.current.delete(group.id); }} className={`relative overflow-visible rounded-2xl transition-[filter,opacity] duration-300 ${draggingGroupId === group.id ? "!z-[9999] pointer-events-none" : "z-0"} ${draggingGroupId && draggingGroupId !== group.id ? "blur-[2px] opacity-45" : ""}`} style={{ willChange: draggingGroupId ? "transform" : undefined }}><div className={`absolute inset-y-0 right-0 flex w-14 items-stretch rounded-r-2xl border border-slate-300 border-l-0 bg-red-800 ${draggingGroupId ? "pointer-events-none opacity-0" : ""}`}><button type="button" tabIndex={swipeGroupId === group.id && swipeOffset === -56 && !draggingGroupId ? 0 : -1} aria-label="Excluir série" onClick={() => setConfirmDeleteGroupId(group.id)} className="w-full rounded-r-2xl text-2xl font-light leading-none text-white hover:bg-red-900">×</button></div><section data-group-id={group.id} onPointerDown={(event) => beginGroupHold(event, group.id)} className={`relative overflow-visible rounded-l-2xl border border-slate-200 bg-white p-3 sm:p-4 ${draggingId || draggingGroupId ? "select-none touch-none" : "touch-pan-y"} ${draggingGroupId === group.id ? "!z-[9999] bg-slate-100 shadow-xl transition-none" : "transition-[filter,opacity,transform,box-shadow] duration-300"} ${swipeGroupId === group.id && swipeOffset === -56 && !draggingGroupId ? "rounded-r-none border-r-0" : "rounded-r-2xl"}`} style={{ willChange: draggingGroupId ? "transform" : undefined, transform: `${swipeGroupId === group.id && !draggingGroupId ? `translateX(${swipeOffset}px)` : ""}` }}>
-      <div data-group-handle onClick={(event) => event.stopPropagation()} className="absolute -left-3 top-[calc(50%-0.8125rem)] z-10 flex size-6 -translate-y-1/2 touch-none cursor-grab items-center justify-center rounded-full border border-slate-200 bg-white text-slate-300 shadow-sm active:cursor-grabbing" aria-label="Mover série" title="Mover série"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path strokeLinecap="round" d="M5 7h14M5 12h14M5 17h14" /></svg></div>
+    {currentGroups.map((group) => <div key={group.id} ref={(element) => { if (element) groupRefs.current.set(group.id, element); else groupRefs.current.delete(group.id); }} className={`relative overflow-visible rounded-2xl transition-[filter,opacity] duration-300 ${draggingGroupId === group.id ? "!z-[9999] pointer-events-none" : "z-0"} ${draggingGroupId && draggingGroupId !== group.id ? "blur-[2px] opacity-45" : ""}`} style={{ willChange: draggingGroupId ? "transform" : undefined }}><div className={`absolute inset-y-0 right-0 flex w-14 items-stretch rounded-r-2xl border border-slate-300 border-l-0 bg-red-800 ${draggingGroupId ? "pointer-events-none opacity-0" : ""}`}><button type="button" tabIndex={swipeGroupId === group.id && swipeOffset === -56 && !draggingGroupId ? 0 : -1} aria-label="Excluir série" onClick={() => setConfirmDeleteGroupId(group.id)} className="w-full rounded-r-2xl text-2xl font-light leading-none text-white hover:bg-red-900">×</button></div><section data-group-id={group.id} className={`relative overflow-visible rounded-l-2xl border border-slate-200 bg-white px-3 py-7 sm:px-4 sm:py-8 ${draggingId || draggingGroupId ? "select-none touch-none" : "touch-pan-y"} ${draggingGroupId === group.id ? "!z-[9999] bg-slate-100 shadow-xl transition-none" : "transition-[filter,opacity,transform,box-shadow] duration-300"} ${swipeGroupId === group.id && swipeOffset === -56 && !draggingGroupId ? "rounded-r-none border-r-0" : "rounded-r-2xl"}`} style={{ willChange: draggingGroupId ? "transform" : undefined, transform: `${swipeGroupId === group.id && !draggingGroupId ? `translateX(${swipeOffset}px)` : ""}` }}>
+      {canReorder && group.orderIndex > 0 ? <button type="button" aria-label="Mover série para cima" disabled={pending} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); moveGroupByOffset(group.id, -1); }} className="absolute top-1 left-1/2 z-10 flex size-5 -translate-x-1/2 items-center justify-center text-slate-400 transition hover:text-slate-950 disabled:opacity-50"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="m7 14 5-5 5 5" /></svg></button> : null}
+      {canReorder && group.orderIndex < currentGroups.length - 1 ? <button type="button" aria-label="Mover série para baixo" disabled={pending} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); moveGroupByOffset(group.id, 1); }} className="absolute bottom-1 left-1/2 z-10 flex size-5 -translate-x-1/2 items-center justify-center text-slate-400 transition hover:text-slate-950 disabled:opacity-50"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="m7 10 5 5 5-5" /></svg></button> : null}
       <div className="divide-y divide-slate-100">{group.items.map((item) => <div key={item.id} ref={(element) => { if (element) itemRefs.current.set(item.id, element); else itemRefs.current.delete(item.id); }} data-exercise-id={item.id} onPointerDown={(event) => beginItemDrag(event, item.id)} className={`grid ${canReorder ? "grid-cols-[minmax(0,1fr)_2.5rem_2.5rem]" : "grid-cols-[minmax(0,1fr)_2.5rem_2.5rem_4.5rem]"} items-center gap-2 py-1 text-[13px] transition-[filter,opacity] duration-300 ${draggingId ? "touch-none" : "touch-pan-y"} ${draggingId === item.id ? "relative z-10 pointer-events-none rounded-lg bg-white shadow-md" : draggingId ? "blur-[2px] opacity-45" : ""}`} style={{ transform: draggingId === item.id ? `translate(${dragDelta.x}px, ${dragDelta.y}px) scale(1.02)` : undefined, transition: draggingId === item.id ? "none" : undefined, willChange: draggingId === item.id ? "transform" : undefined }}>
         <div className="min-w-0 truncate">{item.name}</div><div className="text-center" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}><span className="block text-[9px] text-slate-400">Séries</span>{canReorder ? <NumberPicker compact max={12} className="!h-7" value={item.sets} label="séries" onChange={(value) => updateSets(item.id, value)} /> : <span className="block h-7 pt-1 font-medium text-slate-600">{item.sets}</span>}</div><div className="text-center" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}><span className="block text-[9px] text-slate-400">Reps</span>{canReorder ? <NumberPicker compact className="!h-7" value={item.repetitions} label="repetições" onChange={(value) => updateRepetitions(item.id, value)} /> : <span className="block h-7 pt-1 font-medium text-slate-600">{item.repetitions}</span>}</div>{canReorder ? null : <div className="text-center" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}><span className="block text-[9px] text-slate-400">Carga</span><LoadPicker workoutExerciseId={item.id} exerciseName={item.name} initialLoad={item.load} /></div>}
       </div>)}</div><p className="mt-2 text-xs text-slate-500">Intervalo entre séries: <strong className="text-slate-950">{group.restSeconds === null ? "--" : `${group.restSeconds}s`}</strong></p>

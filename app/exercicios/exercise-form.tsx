@@ -8,15 +8,20 @@ import { FormToast } from "@/app/ui/form-toast";
 const initialState: ExerciseFormState = { message: "" };
 const inputClassName = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base outline-none transition focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10";
 type MuscleGroupOption = { id: string; name: string };
-type ExerciseData = { id: string; name: string; description: string | null; muscleGroups: MuscleGroupOption[] };
+type JointOption = { id: string; name: string; movement?: string | null };
+type ExerciseData = { id: string; name: string; description: string | null; muscleGroups: MuscleGroupOption[]; primaryMuscles?: MuscleGroupOption[]; joints?: JointOption[] };
 
-export function ExerciseForm({ onSuccess, muscleGroups, exercise }: { onSuccess?: () => void; muscleGroups: MuscleGroupOption[]; exercise?: ExerciseData }) {
+export function ExerciseForm({ onSuccess, muscleGroups, joints, exercise }: { onSuccess?: () => void; muscleGroups: MuscleGroupOption[]; joints: JointOption[]; exercise?: ExerciseData }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(exercise ? updateExercise : createExercise, initialState);
   const [fields, setFields] = useState({ name: exercise?.name ?? "", description: exercise?.description ?? "" });
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [query, setQuery] = useState("");
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState<MuscleGroupOption[]>(exercise?.muscleGroups ?? []);
+  const [primaryQuery, setPrimaryQuery] = useState("");
+  const [selectedPrimaryMuscles, setSelectedPrimaryMuscles] = useState<MuscleGroupOption[]>(exercise?.primaryMuscles ?? []);
+  const [jointQuery, setJointQuery] = useState("");
+  const [selectedJoints, setSelectedJoints] = useState<JointOption[]>(exercise?.joints ?? []);
 
   useEffect(() => {
     if (!state.message.includes("sucesso")) return;
@@ -54,11 +59,25 @@ export function ExerciseForm({ onSuccess, muscleGroups, exercise }: { onSuccess?
           <input id="exercise-name" name="name" type="text" placeholder="Ex.: Supino reto" value={fields.name} onChange={(event) => setFields((current) => ({ ...current, name: event.target.value }))} className={inputClassName} />
         </div>
         <div className="relative">
+          <label htmlFor="primary-muscle-search" className="mb-2 block text-sm font-medium text-slate-700">Músculos principais</label>
+          <input id="primary-muscle-search" type="search" value={primaryQuery} onChange={(event) => setPrimaryQuery(event.target.value)} placeholder="Busque um músculo principal" className={inputClassName} />
+          {primaryQuery ? <div className="absolute inset-x-0 top-full z-20 mt-2 max-h-48 overflow-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">{muscleGroups.filter((group) => group.name.toLowerCase().includes(primaryQuery.toLowerCase()) && !selectedPrimaryMuscles.some((selected) => selected.id === group.id)).map((group) => <button key={group.id} type="button" onClick={() => { setSelectedPrimaryMuscles((current) => [...current, group]); setPrimaryQuery(""); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">{group.name}</button>)}</div> : null}
+          <input type="hidden" name="primaryMuscleGroupIds" value={JSON.stringify(selectedPrimaryMuscles.map((group) => group.id))} />
+          {selectedPrimaryMuscles.length ? <div className="mt-3 flex flex-wrap gap-2">{selectedPrimaryMuscles.map((group) => <button key={group.id} type="button" onClick={() => setSelectedPrimaryMuscles((current) => current.filter((selected) => selected.id !== group.id))} className="cursor-pointer rounded-full bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700">{group.name} <span aria-hidden="true" className="ml-1 text-slate-300">×</span></button>)}</div> : null}
+        </div>
+        <div className="relative">
           <label htmlFor="muscle-group-search" className="mb-2 block text-sm font-medium text-slate-700">Grupos musculares</label>
           <input id="muscle-group-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Busque um grupo muscular" className={inputClassName} />
           {query ? <div className="absolute inset-x-0 top-full z-20 mt-2 max-h-48 overflow-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">{muscleGroups.filter((group) => group.name.toLowerCase().includes(query.toLowerCase()) && !selectedMuscleGroups.some((selected) => selected.id === group.id)).map((group) => <button key={group.id} type="button" onClick={() => { setSelectedMuscleGroups((current) => [...current, group]); setQuery(""); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">{group.name}</button>)}</div> : null}
           <input type="hidden" name="muscleGroupIds" value={JSON.stringify(selectedMuscleGroups.map((group) => group.id))} />
           {selectedMuscleGroups.length ? <div className="mt-3 flex flex-wrap gap-2">{selectedMuscleGroups.map((group) => <button key={group.id} type="button" onClick={() => setSelectedMuscleGroups((current) => current.filter((selected) => selected.id !== group.id))} className="cursor-pointer rounded-full bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700">{group.name} <span aria-hidden="true" className="ml-1 text-slate-300">×</span></button>)}</div> : null}
+        </div>
+        <div className="relative">
+          <label htmlFor="joint-search" className="mb-2 block text-sm font-medium text-slate-700">Articulações</label>
+          <input id="joint-search" type="search" value={jointQuery} onChange={(event) => setJointQuery(event.target.value)} placeholder="Busque uma articulação" className={inputClassName} />
+          {jointQuery ? <div className="absolute inset-x-0 top-full z-20 mt-2 max-h-48 overflow-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">{joints.filter((joint) => joint.name.toLowerCase().includes(jointQuery.toLowerCase()) && !selectedJoints.some((selected) => selected.id === joint.id)).map((joint) => <button key={joint.id} type="button" onClick={() => { setSelectedJoints((current) => [...current, joint]); setJointQuery(""); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">{joint.name}</button>)}</div> : null}
+          <input type="hidden" name="jointIds" value={JSON.stringify(selectedJoints.map((joint) => joint.id))} />
+          {selectedJoints.length ? <div className="mt-3 flex flex-wrap gap-2">{selectedJoints.map((joint) => <button key={joint.id} type="button" onClick={() => setSelectedJoints((current) => current.filter((selected) => selected.id !== joint.id))} className="cursor-pointer rounded-full bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700">{joint.name} <span aria-hidden="true" className="ml-1 text-slate-300">×</span></button>)}</div> : null}
         </div>
         <div>
           <label htmlFor="exercise-description" className="mb-2 block text-sm font-medium text-slate-700">Descrição <span className="font-normal text-slate-400">(opcional)</span></label>

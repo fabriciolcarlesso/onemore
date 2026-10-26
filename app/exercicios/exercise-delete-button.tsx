@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { deleteExercise } from "@/app/exercises-actions";
+import { useEscape } from "@/app/ui/use-escape";
 
 export function ExerciseDeleteButton({ exerciseId, exerciseName }: { exerciseId: string; exerciseName: string }) {
   const [open, setOpen] = useState(false);
+  useEscape(() => setOpen(false), open);
 
   return (
     <>

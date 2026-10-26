@@ -27,7 +27,7 @@ export function ExerciseInfo({ name, description, gender }: { name: string; desc
   }
 
   return <>
-    <button type="button" aria-label={`Ver imagens e instruções de ${name}`} aria-haspopup="dialog" onClick={() => { setActiveImage(0); setOpen(true); }} className="block w-full rounded text-left text-sm font-semibold leading-4 [overflow-wrap:anywhere] hover:text-slate-600 hover:underline focus-visible:outline-2 focus-visible:outline-slate-950">{name}</button>
+    <button type="button" aria-label={`Ver imagens e instruções de ${name}`} aria-haspopup="dialog" onClick={() => { setActiveImage(0); setOpen(true); }} className="block w-full rounded text-left text-sm font-semibold leading-4 [overflow-wrap:anywhere] hover:text-slate-600 hover:underline focus:outline-none">{name}</button>
     <dialog ref={dialog} aria-label={`Como fazer ${name}`} onCancel={(event) => { event.preventDefault(); setOpen(false); }} className="fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none overflow-y-auto overscroll-contain border-0 bg-white p-0 text-slate-950 backdrop:bg-black">
       {open ? <>
         <button type="button" autoFocus onClick={() => setOpen(false)} aria-label="Fechar instruções" className="fixed top-[max(1rem,env(safe-area-inset-top))] right-4 z-20 flex size-11 items-center justify-center rounded-full bg-slate-950/75 text-2xl text-white backdrop-blur">×</button>

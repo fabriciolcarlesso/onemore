@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { RichDescription } from "@/app/exercicios/rich-description";
 import { WorkoutDays } from "@/app/treinos/workout-days";
 import { deleteWorkoutFromSheet } from "./actions";
+import { useEscape } from "@/app/ui/use-escape";
 
 type WorkoutCardData = { id: string; name: string; description: string | null; weekdays: string[]; exerciseCount: number; estimatedMinutes: number };
 
@@ -15,6 +16,7 @@ export function WorkoutCard({ workout }: { workout: WorkoutCardData }) {
   const [dragging, setDragging] = useState(false);
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  useEscape(() => setConfirmOpen(false), confirmOpen);
   const cardRef = useRef<HTMLLIElement>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerStart = useRef<{ x: number; y: number; offset: number; axis: "x" | "y" | null } | null>(null);

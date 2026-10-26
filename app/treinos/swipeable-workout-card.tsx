@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { deleteWorkoutFromSheet } from "@/app/planilhas/actions";
+import { useEscape } from "@/app/ui/use-escape";
 
 type WorkoutItem = { id: string; name: string; description: string | null; creator: string | null };
 
@@ -12,6 +13,7 @@ export function SwipeableWorkoutCard({ workout, isStudent = false }: { workout: 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const start = useRef<{ x: number; y: number; axis: "x" | "y" | null } | null>(null);
   const card = useRef<HTMLLIElement>(null);
+  useEscape(() => setConfirmOpen(false), confirmOpen);
 
   useEffect(() => {
     if (offset !== -56 || confirmOpen) return;

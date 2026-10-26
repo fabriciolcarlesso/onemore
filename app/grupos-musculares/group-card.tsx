@@ -1,0 +1,29 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { deleteMuscleGroup, updateMuscleGroup } from "./actions";
+import { useEscape } from "@/app/ui/use-escape";
+
+type Group = { id: string; name: string; description: string | null };
+
+export function GroupCard({ group, open, onOpenChange }: { group: Group; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const [offset, setOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const startX = useRef(0);
+  const startOffset = useRef(0);
+  const moved = useRef(false);
+  useEscape(() => setEditing(false), editing);
+  return <div className="relative overflow-hidden rounded-2xl">
+    <div className="absolute inset-y-0 right-0 flex w-12 items-center justify-center">
+      <form action={deleteMuscleGroup} onSubmit={(event) => { if (!window.confirm(`Excluir o grupo muscular ${group.name}?`)) event.preventDefault(); }}>
+        <input type="hidden" name="id" value={group.id} />
+        <button type="submit" aria-label={`Excluir ${group.name}`} className="flex size-7 items-center justify-center rounded-full bg-red-800 text-base text-white outline-none shadow-sm transition hover:bg-red-900 focus:outline-none">×</button>
+      </form>
+    </div>
+    <button type="button" className={`relative flex h-12 w-full touch-pan-y items-center rounded-2xl border border-slate-200 bg-white px-5 py-0 text-left text-sm font-semibold text-slate-950 outline-none focus:outline-none ${dragging ? "transition-none" : "transition-transform duration-200"}`} style={{ transform: `translateX(${open ? -48 : dragging ? offset : 0}px)` }} onPointerDown={(event) => { startX.current = event.clientX; startOffset.current = open ? -48 : 0; moved.current = false; setDragging(true); }} onPointerMove={(event) => { const delta = event.clientX - startX.current; if (Math.abs(delta) > 8) moved.current = true; setOffset(Math.max(-48, Math.min(0, startOffset.current + delta))); }} onPointerUp={(event) => { const nextOpen = startOffset.current + event.clientX - startX.current < -24; setDragging(false); setOffset(nextOpen ? -48 : 0); onOpenChange(nextOpen); }} onPointerCancel={() => { setDragging(false); setOffset(0); onOpenChange(false); }} onClick={() => { if (!moved.current) setEditing(true); moved.current = false; }}>
+      {group.name}
+    </button>
+    {editing ? <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Editar grupo muscular"><button type="button" aria-label="Fechar" onClick={() => setEditing(false)} className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm" /><form action={async (formData) => { await updateMuscleGroup(formData); setEditing(false); }} className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"><input type="hidden" name="id" value={group.id} /><h2 className="text-lg font-semibold">Editar grupo muscular</h2><label className="mt-5 block text-sm font-medium">Nome<input name="name" defaultValue={group.name} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" /></label><label className="mt-4 block text-sm font-medium">Descrição<textarea name="description" defaultValue={group.description ?? ""} rows={4} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" /></label><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditing(false)} className="rounded-xl px-4 py-2.5 text-sm text-slate-500">Cancelar</button><button type="submit" className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Salvar</button></div></form></div> : null}
+  </div>;
+}

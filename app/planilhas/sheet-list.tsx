@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { deleteWorkoutSheet } from "./actions";
 import { RichDescription } from "@/app/exercicios/rich-description";
+import { useEscape } from "@/app/ui/use-escape";
 
 type SheetItem = { id: string; name: string; description: string | null; workoutCount: number };
 
@@ -28,6 +29,7 @@ function SwipeableSheetCard({ sheet, open, onOpenChange }: { sheet: SheetItem; o
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  useEscape(() => setConfirmOpen(false), confirmOpen);
   const offset = dragging ? dragOffset : open || confirmOpen ? -56 : 0;
   const pointerStart = useRef<{ x: number; y: number; offset: number; axis: "x" | "y" | null } | null>(null);
   const suppressClick = useRef(false);

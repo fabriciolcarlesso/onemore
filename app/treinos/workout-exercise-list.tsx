@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "rea
 import { deleteWorkoutGroupFromForm, reorderWorkoutExercises, reorderWorkoutGroups, updateWorkoutExerciseRepetitions, updateWorkoutExerciseSets } from "@/app/workout-actions";
 import { LoadPicker } from "./load-picker";
 import { NumberPicker } from "./number-picker";
+import { useEscape } from "@/app/ui/use-escape";
 
 type WorkoutItem = { id: string; groupId: string; name: string; sets: number; repetitions: number; load: string | null; orderIndex: number };
 type WorkoutGroup = { id: string; restSeconds: number | null; orderIndex: number; items: WorkoutItem[] };
@@ -16,6 +17,7 @@ export function WorkoutExerciseList({ workoutId, groups, canReorder }: { workout
   const [swipeGroupId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [confirmDeleteGroupId, setConfirmDeleteGroupId] = useState<string | null>(null);
+  useEscape(() => setConfirmDeleteGroupId(null), confirmDeleteGroupId !== null);
   const [pending, startTransition] = useTransition();
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPoint = useRef({ x: 0, y: 0 });

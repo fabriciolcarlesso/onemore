@@ -8,7 +8,7 @@ export default function CadastroSucessoPage() {
           just<strong className="font-bold">OneMore</strong>
         </p>
         <div aria-hidden="true" className="mx-auto my-5 h-px w-12 bg-slate-300" />
-        <h1 className="text-xl font-semibold">Confira seu e-mail</h1>
+        <span className="mb-3 block h-1 w-[30px] rounded-full bg-slate-950" aria-hidden="true" /><h1 className="text-xl font-semibold">Confira seu e-mail</h1>
         <p className="mt-3 text-sm leading-6 text-slate-500">
           Enviamos um link de confirmação. Depois de confirmar seu endereço,
           você poderá entrar na sua conta.

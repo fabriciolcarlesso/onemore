@@ -16,10 +16,10 @@ export default async function PlansPage() {
   return <DashboardShell user={user} signOut={signOut} activePage="plans">
     <div className="w-full">
       <header className="mb-8">
-        <span className="mb-3 block h-1 w-[30px] rounded-full bg-slate-950" />
-        <p className="text-sm font-medium text-slate-400">Sua assinatura</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Escolha seu plano</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-500">Encontre uma opção para acompanhar sua rotina de treinos.</p>
+
+
+        <span className="mb-3 block h-1 w-[30px] rounded-full bg-slate-950" aria-hidden="true" /><h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Escolha seu plano</h1>
+
       </header>
       <PlanPicker initialPlanId={chosenPlan?.planId ?? ""} />
     </div>

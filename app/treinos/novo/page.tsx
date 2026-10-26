@@ -13,7 +13,7 @@ export default async function NewWorkoutPage({ searchParams }: { searchParams: P
   const { planilha } = await searchParams;
   const [sheet] = planilha && /^[0-9a-f-]{36}$/i.test(planilha) ? await db.select({ id: workoutSheets.id, name: workoutSheets.name }).from(workoutSheets).where(and(eq(workoutSheets.id, planilha), eq(workoutSheets.createdBy, user.id))).limit(1) : [];
   if (planilha && !sheet) redirect("/planilhas");
-  const exerciseList = await db.select({ id: exercises.id, name: exercises.name, description: exercises.description }).from(exercises).orderBy(asc(exercises.name));
+  const exerciseList = await db.select({ id: exercises.id, name: exercises.name, description: exercises.description }).from(exercises).where(eq(exercises.reviewStatus, "aprovado")).orderBy(asc(exercises.name));
   const muscleGroupList = await db.select({ id: muscleGroups.id, name: muscleGroups.name }).from(muscleGroups).orderBy(asc(muscleGroups.name));
   return <DashboardShell user={user} signOut={signOut} activePage={sheet ? "sheets" : "workouts"} hideFooter><div className="max-w-3xl">
 

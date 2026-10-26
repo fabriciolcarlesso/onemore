@@ -16,7 +16,7 @@ export default async function EditWorkoutPage({ params, searchParams }: { params
   if (!workout) notFound();
   const groups = await db.select().from(workoutGroups).where(eq(workoutGroups.workoutId, id)).orderBy(asc(workoutGroups.orderIndex));
   const items = groups.length ? await db.select().from(workoutExercises).where(inArray(workoutExercises.groupId, groups.map((group) => group.id))).orderBy(asc(workoutExercises.orderIndex)) : [];
-  const exerciseList = await db.select({ id: exercises.id, name: exercises.name, description: exercises.description }).from(exercises).orderBy(asc(exercises.name));
+  const exerciseList = await db.select({ id: exercises.id, name: exercises.name, description: exercises.description }).from(exercises).where(eq(exercises.reviewStatus, "aprovado")).orderBy(asc(exercises.name));
   const muscleGroupList = await db.select({ id: muscleGroups.id, name: muscleGroups.name }).from(muscleGroups).orderBy(asc(muscleGroups.name));
   const data = { ...workout, groups: groups.map((group) => ({ ...group, restSeconds: group.restSeconds === null ? "" : String(group.restSeconds), exercises: items.filter((item) => item.groupId === group.id).map((item) => ({ ...item, load: item.load ?? "" })) })) };
   const { novoExercicio } = await searchParams;

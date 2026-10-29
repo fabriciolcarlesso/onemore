@@ -3,6 +3,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -132,12 +133,19 @@ export const emailVerificationTokens = pgTable(
   ],
 );
 
+export const exerciseReviewStatus = pgEnum("exercise_review_status", [
+  "pendente",
+  "aprovado",
+]);
+
 export const exercises = pgTable(
   "exercises",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 120 }).notNull(),
+    englishName: varchar("english_name", { length: 160 }),
     description: text("description"),
+    reviewStatus: exerciseReviewStatus("review_status").default("aprovado").notNull(),
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -369,6 +377,7 @@ export const exerciseDocuments = pgTable(
     content: text("content").notNull(),
     status: exerciseDocumentStatus("status").default("uploaded").notNull(),
     extractedText: text("extracted_text"),
+    structuredData: jsonb("structured_data"),
     errorMessage: text("error_message"),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -429,4 +438,102 @@ export const exerciseEquipment = pgTable(
     notes: text("notes"),
   },
   (table) => [primaryKey({ columns: [table.exerciseId, table.equipmentId] })],
+);
+
+export const exerciseAttributes = pgTable("exercise_attributes", {
+  exerciseId: uuid("exercise_id").primaryKey().references(() => exercises.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 60 }),
+  laterality: varchar("laterality", { length: 60 }),
+  kineticChain: varchar("kinetic_chain", { length: 60 }),
+  movementPattern: varchar("movement_pattern", { length: 60 }),
+  plane: varchar("plane", { length: 60 }),
+  stabilityDemand: varchar("stability_demand", { length: 60 }),
+  loadProgression: varchar("load_progression", { length: 60 }),
+  resistanceCurve: text("resistance_curve"),
+  machineAdjustments: text("machine_adjustments"),
+  equipmentCategory: varchar("equipment_category", { length: 80 }),
+  sessionRole: varchar("session_role", { length: 60 }),
+  systemicFatigue: integer("systemic_fatigue"),
+  technicalComplexity: integer("technical_complexity"),
+  safeToFailure: boolean("safe_to_failure"),
+  setupSeconds: integer("setup_seconds"),
+  secondsPerSet: integer("seconds_per_set"),
+  unilateral: boolean("unilateral"),
+  position: varchar("position", { length: 60 }),
+  impact: varchar("impact", { length: 60 }),
+  axialLoad: varchar("axial_load", { length: 60 }),
+  goesToFloor: boolean("goes_to_floor"),
+  minimumLevel: varchar("minimum_level", { length: 60 }),
+  sources: text("sources").array().notNull().default([]),
+});
+
+export const exerciseDiscomfort = pgTable(
+  "exercise_discomfort",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    region: varchar("region", { length: 80 }).notNull(),
+    score: integer("score").notNull(),
+    label: varchar("label", { length: 60 }),
+    notes: text("notes"),
+  },
+  (table) => [index("exercise_discomfort_exercise_id_idx").on(table.exerciseId)],
+);
+
+export const exerciseMuscleVolume = pgTable(
+  "exercise_muscle_volume",
+  {
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    slug: varchar("slug", { length: 80 }).notNull(),
+    label: varchar("label", { length: 80 }).notNull(),
+    value: numeric("value", { precision: 4, scale: 2 }).notNull(),
+    kind: varchar("kind", { length: 40 }),
+  },
+  (table) => [primaryKey({ columns: [table.exerciseId, table.slug] })],
+);
+
+export const healthConditions = pgTable("health_conditions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: varchar("slug", { length: 80 }).notNull(),
+  name: varchar("name", { length: 160 }).notNull(),
+}, (table) => [uniqueIndex("health_conditions_slug_unique").on(table.slug)]);
+
+export const healthRuleAction = pgEnum("health_rule_action", [
+  "excluir",
+  "permitido",
+  "adaptar",
+]);
+
+export const exerciseHealthRules = pgTable(
+  "exercise_health_rules",
+  {
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    healthConditionId: uuid("health_condition_id").notNull().references(() => healthConditions.id, { onDelete: "cascade" }),
+    action: healthRuleAction("action").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.exerciseId, table.healthConditionId] }),
+    index("exercise_health_rules_condition_idx").on(table.healthConditionId),
+  ],
+);
+
+export const exercisePriorityKind = pgEnum("exercise_priority_kind", [
+  "objetivo",
+  "nivel",
+  "perfil",
+  "condicao",
+]);
+
+export const exercisePriorities = pgTable(
+  "exercise_priorities",
+  {
+    exerciseId: uuid("exercise_id").notNull().references(() => exercises.id, { onDelete: "cascade" }),
+    kind: exercisePriorityKind("kind").notNull(),
+    slug: varchar("slug", { length: 80 }).notNull(),
+    label: varchar("label", { length: 120 }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.exerciseId, table.kind, table.slug] }),
+    index("exercise_priorities_kind_slug_idx").on(table.kind, table.slug),
+  ],
 );
